@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }} - Админ-панель СК "Вершина"</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='admin_style.css') }}">
+    
+</head>
+<body>
+    <div class="admin-container">
+        <div class="admin-nav">
+            <a href="{{ url_for('admin_coaches_list') }}">Управление тренерами</a>
+            <a href="{{ url_for('admin_services_list') }}">Управление услугами</a>
+            <a href="{{ url_for('admin_news_list') }}">Управление новостями</a> 
+            <a href="{{ url_for('index') }}" style="float: right;">На главный сайт</a>
+        </div>
+
+        <h1>{{ title }}</h1>
+        
+        {% if error %}
+            <p class="error-message">{{ error }}</p>
+        {% endif %}
+
+        <form method="POST" action="{{ form_action }}">
+            <div class="form-group">
+                <label for="name">Название услуги <span style="color:red;">*</span>:</label>
+                <input type="text" id="name" name="name" required value="{{ service.name if service else '' }}">
+            </div>
+            <div class="form-group">
+                <label for="description">Описание:</label>
+                <textarea id="description" name="description" rows="3">{{ service.description if service else '' }}</textarea>
+            </div>
+            <div class="form-group">
+                <label for="price">Цена (тг) <span style="color:red;">*</span>:</label>
+                <input type="number" id="price" name="price" step="0.01" min="0" required value="{{ service.price if service else '' }}">
+            </div>
+            <div class="form-group">
+                <label for="duration">Длительность (например, 1 час, 1 день):</label>
+                <input type="text" id="duration" name="duration" value="{{ service.duration if service else '' }}">
+            </div>
+            <div class="form-group">
+                <label for="section">Секция <span style="color:red;">*</span>:</label>
+                <select id="section" name="section" required>
+                    <option value="" disabled {% if not service or not service.section %}selected{% endif %}>-- Выберите секцию --</option>
+                    <option value="ski" {% if service and service.section == 'ski' %}selected{% endif %}>Горнолыжная база</option>
+                    <option value="gym" {% if service and service.section == 'gym' %}selected{% endif %}>Тренажерный зал</option>
+                </select>
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="submit-button">{{ 'Сохранить изменения' if service else 'Добавить услугу' }}</button>
+                <a href="{{ url_for('admin_services_list') }}" class="cancel-button">Отмена</a>
+            </div>
+        </form>
+    </div>
+</body>
+</html>

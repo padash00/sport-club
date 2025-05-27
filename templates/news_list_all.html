@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }} - СК "Вершина"</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        /* Стили для контейнера списка новостей и отдельных элементов */
+        .news-list-page-container { 
+            max-width: 900px; 
+            margin: 30px auto; 
+            padding: 20px;
+        }
+        .news-list-page-container h1 {
+            margin-bottom: 30px;
+            text-align: center;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 20px;
+        }
+        .news-list-item { 
+            background: #fff; 
+            border-radius: 8px; 
+            margin-bottom: 30px; 
+            padding: 25px; 
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            display: flex; /* Для расположения картинки и текста рядом */
+            gap: 20px; /* Пространство между картинкой и текстом */
+        }
+        .news-list-item .news-thumbnail-container {
+            flex-shrink: 0; /* Картинка не будет сжиматься */
+            width: 250px; /* Фиксированная ширина для картинки */
+        }
+        .news-list-item img.news-thumbnail { 
+            width: 100%; 
+            height: 180px; 
+            object-fit: cover; 
+            border-radius: 5px; 
+        }
+        .news-list-item .news-content-summary {
+            flex-grow: 1; /* Текстовый блок займет оставшееся пространство */
+        }
+        .news-list-item h3 a { 
+            color: #0d2c4e; 
+            text-decoration: none; 
+            font-size: 22px;
+            font-family: 'Montserrat', sans-serif;
+        }
+        .news-list-item h3 a:hover { color: #005A9C; }
+        .news-list-item .pub-date { 
+            color: #777; 
+            font-size: 0.85em; 
+            margin: 5px 0 10px 0; 
+            display: block; 
+        }
+        .news-list-item .news-snippet { 
+            font-size: 0.95em; 
+            line-height: 1.6; 
+            margin-bottom: 15px; 
+        }
+        .read-more-link { 
+            color: #005A9C; 
+            text-decoration: none; 
+            font-weight: bold;
+        }
+        .read-more-link:hover { text-decoration: underline; }
+
+        /* Адаптивность для списка новостей */
+        @media (max-width: 600px) {
+            .news-list-item {
+                flex-direction: column; /* Картинка и текст друг под другом */
+            }
+            .news-list-item .news-thumbnail-container {
+                width: 100%; /* Картинка на всю ширину */
+                margin-bottom: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="site-header">
+        <div class="container">
+            <div class="logo"><a href="{{ url_for('index') }}">СК "Вершина"</a></div>
+            <nav id="main-nav" class="main-nav">
+    <ul>
+        <li><a href="{{ url_for('ski_resort') }}">Горнолыжная база</a></li>
+        <li><a href="{{ url_for('gym') }}">Тренажерный зал</a></li>
+        <li><a href="{{ url_for('news_list_all') }}">Новости</a></li> 
+        <li><a href="{{ url_for('contacts_page') }}">Контакты</a></li> </ul>
+</nav>
+            <button id="burger-menu" class="burger-menu"><span></span><span></span><span></span></button>
+        </div>
+    </header>
+
+    <main>
+        <div class="news-list-page-container">
+            <h1>{{ title }}</h1>
+            {% if articles %}
+                {% for article in articles %}
+                <article class="news-list-item">
+                    {% if article.image_path %}
+                    <div class="news-thumbnail-container">
+                        <a href="{{ url_for('news_article_detail', article_id=article.id) }}">
+                            <img src="{{ url_for('static', filename=article.image_path) }}" alt="{{ article.title }}" class="news-thumbnail">
+                        </a>
+                    </div>
+                    {% endif %}
+                    <div class="news-content-summary">
+                        <h3><a href="{{ url_for('news_article_detail', article_id=article.id) }}">{{ article.title }}</a></h3>
+                        <span class="pub-date">Опубликовано: {{ article.pub_date.strftime('%d.%m.%Y') }}</span>
+                        <p class="news-snippet">{{ article.content | striptags | truncate(300, True, '...') }}</p> {# Немного больше текста для превью #}
+                        <a href="{{ url_for('news_article_detail', article_id=article.id) }}" class="read-more-link">Читать полностью &rarr;</a>
+                    </div>
+                </article>
+                {% endfor %}
+            {% else %}
+                <p style="text-align:center;">Новостей пока нет. Загляните позже!</p>
+            {% endif %}
+        </div>
+    </main>
+
+    <footer id="contacts-section" class="site-footer">
+        <div class="container">
+            <div class="footer-widget"><h4>Контакты</h4><p>Адрес: г. Горный, ул. Снежная, д. 1</p><p>Телефон: +7 (707) 123-45-67</p><p>Email: info@vershina-club.kz</p></div>
+            <div class="footer-widget"><h4>Мы в соцсетях</h4><ul><li><a href="#">Instagram</a></li><li><a href="#">VK</a></li><li><a href="#">Telegram</a></li></ul></div>
+        </div>
+        <div class="copyright"><p>&copy; 2025, СК "Вершина". Все права защищены.</p></div>
+    </footer>
+    <script src="{{ url_for('static', filename='script.js') }}" defer></script>
+</body>
+</html>

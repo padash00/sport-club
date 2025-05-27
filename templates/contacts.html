@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }} - СК "Вершина"</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        /* Дополнительные стили для страницы контактов */
+        .contact-page-container { 
+            max-width: 900px; 
+            margin: 30px auto; 
+            padding: 20px;
+        }
+        .contact-page-container h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 20px;
+        }
+        .contact-section { 
+            background: #fff; 
+            padding: 30px; 
+            border-radius: 8px; 
+            margin-bottom: 30px; 
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08); 
+        }
+        .contact-section h2 { 
+            margin-top: 0; 
+            border-bottom: 1px solid #eee; 
+            padding-bottom: 15px; 
+            margin-bottom: 20px; 
+            font-family: 'Montserrat', sans-serif;
+            font-size: 24px;
+            color: #0d2c4e;
+        }
+        .contact-info-list p { 
+            margin-bottom: 12px; 
+            line-height: 1.7; 
+            font-size: 16px;
+        }
+        .contact-info-list strong { color: #333; }
+        .contact-info-list a { color: #005A9C; text-decoration: none; }
+        .contact-info-list a:hover { text-decoration: underline; }
+
+        /* Стили для формы */
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; margin-bottom: 8px; font-weight: 600; color: #333; }
+        .form-group input[type="text"],
+        .form-group input[type="email"],
+        .form-group textarea {
+            width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 4px;
+            box-sizing: border-box; font-family: 'Roboto', sans-serif; font-size: 15px;
+        }
+        .form-group textarea { min-height: 120px; resize: vertical; }
+        
+        /* Стили для карты */
+        .map-container { 
+            position: relative; 
+            padding-bottom: 60%; /* Соотношение сторон карты, можно настроить */ 
+            height: 0; 
+            overflow: hidden; 
+            border-radius: 5px;
+        }
+        .map-container iframe { 
+            position: absolute; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%; 
+            border:0; 
+        }
+        .submit-button { /* Используем класс из основного style.css, но можем переопределить */
+            display: inline-block; 
+            background-color: #005A9C; 
+            color: #ffffff; 
+            padding: 12px 25px; 
+            border-radius: 5px; 
+            font-weight: 700; 
+            border: none; 
+            cursor: pointer; 
+            font-size: 16px;
+        }
+        .submit-button:hover { background-color: #004170; }
+    </style>
+</head>
+<body>
+    <header class="site-header">
+        <div class="container">
+            <div class="logo"><a href="{{ url_for('index') }}">СК "Вершина"</a></div>
+            <nav id="main-nav" class="main-nav">
+                <ul>
+                    <li><a href="{{ url_for('ski_resort') }}">Горнолыжная база</a></li>
+                    <li><a href="{{ url_for('gym') }}">Тренажерный зал</a></li>
+                    <li><a href="{{ url_for('news_list_all') }}">Новости</a></li>
+                    <li><a href="{{ url_for('contacts_page') }}">Контакты</a></li>
+                </ul>
+            </nav>
+            <button id="burger-menu" class="burger-menu"><span></span><span></span><span></span></button>
+        </div>
+    </header>
+
+    <main>
+        <div class="contact-page-container">
+            <h1>{{ title }}</h1>
+
+            <section class="contact-section contact-info-list">
+                <h2>Наша информация</h2>
+                <p><strong>Адрес:</strong> г. Горный, ул. Снежная, д. 1, Спортивный Клуб "Вершина"</p>
+                <p><strong>Телефон:</strong> <a href="tel:+77071234567">+7 (707) 123-45-67</a> (Администратор)</p>
+                <p><strong>Email:</strong> <a href="mailto:info@vershina-club.kz">info@vershina-club.kz</a></p>
+                <hr style="margin: 20px 0; border: 0; border-top: 1px solid #eee;">
+                <p><strong>Время работы Горнолыжной базы:</strong><br>
+                    Понедельник - Воскресенье: 09:00 - 22:00</p>
+                <p><strong>Время работы Тренажерного зала:</strong><br>
+                    Понедельник - Пятница: 07:00 - 23:00<br>
+                    Суббота - Воскресенье: 08:00 - 22:00</p>
+            </section>
+
+            <section class="contact-section map-section">
+                <h2>Мы на карте</h2>
+                <div class="map-container">
+                    <iframe src="https://yandex.ru/map-widget/v1/?um=constructor%3A7e529e645439b3180781cc892f7f7148b638991198251c183783b34773607a92&amp;source=constructor" width="100%" height="450" frameborder="0"></iframe>
+                </div>
+            </section>
+
+            <section class="contact-section contact-form-section">
+                <h2>Обратная связь</h2>
+                <p>Если у вас есть вопросы, предложения или вы хотите оставить отзыв, пожалуйста, заполните форму ниже. Мы свяжемся с вами в ближайшее время!</p>
+                <form action="{{ url_for('submit_contact_form') }}" method="POST">
+                    <div class="form-group">
+                        <label for="contact_name">Ваше имя:</label>
+                        <input type="text" id="contact_name" name="contact_name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="contact_email">Ваш Email:</label>
+                        <input type="email" id="contact_email" name="contact_email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="contact_subject">Тема сообщения:</label>
+                        <input type="text" id="contact_subject" name="contact_subject">
+                    </div>
+                    <div class="form-group">
+                        <label for="contact_message">Ваше сообщение:</label>
+                        <textarea id="contact_message" name="contact_message" rows="6" required></textarea>
+                    </div>
+                    <button type="submit" class="submit-button">Отправить сообщение</button>
+                </form>
+            </section>
+        </div>
+    </main>
+
+    <footer id="contacts-section" class="site-footer">
+         <div class="container">
+            <div class="footer-widget"><h4>Контакты</h4><p>Адрес: г. Горный, ул. Снежная, д. 1</p><p>Телефон: +7 (707) 123-45-67</p><p>Email: info@vershina-club.kz</p></div>
+            <div class="footer-widget"><h4>Мы в соцсетях</h4><ul><li><a href="#">Instagram</a></li><li><a href="#">VK</a></li><li><a href="#">Telegram</a></li></ul></div>
+        </div>
+        <div class="copyright"><p>&copy; 2025, СК "Вершина". Все права защищены.</p></div>
+    </footer>
+    <script src="{{ url_for('static', filename='script.js') }}" defer></script>
+</body>
+</html>

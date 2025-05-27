@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }} - СК "Вершина"</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        /* Дополнительные стили для этой страницы */
+        .news-detail-container { 
+            max-width: 800px; 
+            margin: 40px auto; 
+            padding: 25px; 
+            background: #fff; 
+            border-radius: 8px; 
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        }
+        .news-detail-container .news-image { 
+            width: 100%; /* Картинка будет растягиваться на всю ширину контейнера */
+            max-height: 400px; /* Ограничим максимальную высоту */
+            object-fit: cover; /* Чтобы картинка не искажалась */
+            border-radius: 5px; 
+            margin-bottom: 20px; 
+        }
+        .news-detail-container .pub-date { 
+            color: #777; 
+            font-size: 0.9em; 
+            margin-bottom: 15px; 
+            display: block;
+        }
+        .news-detail-container .news-content { 
+            line-height: 1.7; 
+            font-size: 16px;
+            /* Это свойство позволит отображать переносы строк из текста новости */
+            white-space: pre-line; 
+        }
+        .news-detail-container .back-link { 
+            display: inline-block; 
+            margin-top: 30px; 
+            color: #005A9C; 
+            text-decoration: none; 
+            font-weight: bold;
+        }
+        .news-detail-container .back-link:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <header class="site-header">
+        <div class="container">
+            <div class="logo">
+                <a href="{{ url_for('index') }}">СК "Вершина"</a>
+            </div>
+            <nav id="main-nav" class="main-nav">
+    <ul>
+        <li><a href="{{ url_for('ski_resort') }}">Горнолыжная база</a></li>
+        <li><a href="{{ url_for('gym') }}">Тренажерный зал</a></li>
+        <li><a href="{{ url_for('news_list_all') }}">Новости</a></li> 
+        <li><a href="{{ url_for('contacts_page') }}">Контакты</a></li> </ul>
+</nav>
+            <button id="burger-menu" class="burger-menu">
+                <span></span><span></span><span></span>
+            </button>
+        </div>
+    </header>
+
+    <main>
+        <div class="news-detail-container">
+            <h1>{{ article.title }}</h1>
+            {% if article.pub_date %}
+            <span class="pub-date">Опубликовано: {{ article.pub_date.strftime('%d %B %Y, %H:%M') }}</span>
+            {% endif %}
+            
+            {% if article.image_path %}
+                <img src="{{ url_for('static', filename=article.image_path) }}" alt="{{ article.title }}" class="news-image">
+            {% endif %}
+            
+            <div class="news-content">
+                {{ article.content }} {# white-space: pre-line; в стилях обработает переносы строк #}
+            </div>
+            
+            <a href="{{ url_for('index') }}#news-section" class="back-link">&larr; К новостям на главной</a>
+            {# Позже можно будет сделать ссылку на /news (список всех новостей) #}
+        </div>
+    </main>
+
+    <footer id="contacts-section" class="site-footer">
+        <div class="container">
+            <div class="footer-widget">
+                <h4>Контакты</h4>
+                <p>Адрес: г. Горный, ул. Снежная, д. 1</p>
+                <p>Телефон: +7 (707) 123-45-67</p>
+                <p>Email: info@vershina-club.kz</p>
+            </div>
+            <div class="footer-widget">
+                <h4>Мы в соцсетях</h4>
+                <ul class="social-links">
+                    <li><a href="#">Instagram</a></li>
+                    <li><a href="#">VK</a></li>
+                    <li><a href="#">Telegram</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="copyright">
+            <p>&copy; 2025, СК "Вершина". Все права защищены.</p>
+        </div>
+    </footer>
+    <script src="{{ url_for('static', filename='script.js') }}" defer></script>
+</body>
+</html>

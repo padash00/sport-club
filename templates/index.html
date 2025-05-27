@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }} - СК "Вершина"</title> <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <header class="site-header">
+        <div class="container">
+            <div class="logo">
+                <a href="{{ url_for('index') }}">СК "Вершина"</a>
+            </div>
+            <nav id="main-nav" class="main-nav">
+    <ul>
+        <li><a href="{{ url_for('ski_resort') }}">Горнолыжная база</a></li>
+        <li><a href="{{ url_for('gym') }}">Тренажерный зал</a></li>
+        <li><a href="{{ url_for('news_list_all') }}">Новости</a></li> 
+        <li><a href="{{ url_for('contacts_page') }}">Контакты</a></li> </ul>
+</nav>
+            <button id="burger-menu" class="burger-menu">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+    </header>
+
+    <main>
+        <section class="hero">
+            <div class="container">
+                <h1>Покоряй новые вершины с нами!</h1>
+                <p>Современный спортивный комплекс для активного отдыха и эффективных тренировок.</p>
+            </div>
+        </section>
+
+        <section id="choice-section" class="choice-section">
+            <div class="container">
+                <h2>Выберите ваше направление</h2>
+                <div class="directions-wrapper">
+                    <div id="ski-resort-section" class="direction-card ski">
+                        <h3>Горнолыжная база</h3>
+                        <p>Снежные склоны, современные подъемники и опытные инструкторы ждут вас.</p>
+                        <a href="{{ url_for('ski_resort') }}" class="btn">Узнать больше</a>
+                    </div>
+                    <div id="gym-section" class="direction-card gym">
+                        <h3>Тренажерный и батутный зал</h3>
+                        <p>Профессиональное оборудование, групповые программы и персональные тренировки.</p>
+                        <a href="{{ url_for('gym') }}" class="btn">Узнать больше</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="news-section" class="news-section">
+            <div class="container">
+                <h2>Новости и акции</h2>
+                {% if latest_news %}
+                    <div class="news-wrapper">
+                        {% for article in latest_news %}
+                        <article class="news-item">
+                            {% if article.image_path %}
+                                <div class="news-item-image" style="text-align: center; margin-bottom: 10px;">
+                                    <a href="{{ url_for('news_article_detail', article_id=article.id) }}">
+                                        <img src="{{ url_for('static', filename=article.image_path) }}" alt="{{ article.title }}" style="max-width:100%; height: 180px; object-fit: cover; border-radius: 5px 5px 0 0;">
+                                    </a>
+                                </div>
+                            {% endif %}
+                            <div class="news-item-content" style="padding: 0 15px 15px 15px;">
+                                <h4><a href="{{ url_for('news_article_detail', article_id=article.id) }}">{{ article.title }}</a></h4>
+                                <p><small>Опубликовано: {{ article.pub_date.strftime('%d.%m.%Y') }}</small></p>
+                                <p>{{ article.content | striptags | truncate(150, True, '...') }}</p>
+                                <a href="{{ url_for('news_article_detail', article_id=article.id) }}" class="btn btn-small">Читать далее...</a>
+                            </div>
+                        </article>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p style="text-align: center;">Свежих новостей пока нет. Загляните позже!</p>
+                {% endif %}
+            </div>
+        </section>
+    </main>
+
+    <footer id="contacts-section" class="site-footer">
+        <div class="container">
+            <div class="footer-widget">
+                <h4>Контакты</h4>
+                <p>Адрес: г. Горный, ул. Снежная, д. 1</p>
+                <p>Телефон: +7 (707) 123-45-67</p>
+                <p>Email: info@vershina-club.kz</p>
+            </div>
+            <div class="footer-widget">
+                <h4>Мы в соцсетях</h4>
+                <ul class="social-links">
+                    <li><a href="#">Instagram</a></li>
+                    <li><a href="#">VK</a></li>
+                    <li><a href="#">Telegram</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="copyright">
+            <p>&copy; 2025, СК "Вершина". Все права защищены.</p>
+        </div>
+    </footer>
+
+    <script src="{{ url_for('static', filename='script.js') }}" defer></script>
+</body>
+</html>
