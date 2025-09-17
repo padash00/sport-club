@@ -10,25 +10,27 @@ from flask import Flask, render_template, request, redirect, url_for, Response
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.utils import secure_filename
 
-# ── Пути к папкам проекта ──────────────────────────────────────────────────────
+# ── Пути проекта ───────────────────────────────────────────────────────────────
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 ROOT_DIR = os.path.abspath(os.path.join(BASE_DIR, '..'))
 
 app = Flask(
     __name__,
     template_folder=os.path.join(ROOT_DIR, 'templates'),
-    static_folder=os.path.join(ROOT_DIR, 'static')
+    static_folder=os.path.join(ROOT_DIR, 'static'),
 )
 
-def env(key, default=None):
-    return os.environ.get(key, default)
+def env(key, default=None): return os.environ.get(key, default)
+
+# ── Флаг serverless (Vercel) ───────────────────────────────────────────────────
+IS_SERVERLESS = bool(env('VERCEL') or env('NOW_REGION') or env('AWS_LAMBDA_FUNCTION_NAME'))
 
 # ── Секреты/сессии ────────────────────────────────────────────────────────────
 app.secret_key = env('SECRET_KEY') or os.urandom(32)
 
 # ── Basic Auth для /admin* ────────────────────────────────────────────────────
 ADMIN_USER = env('ADMIN_USER', 'admin')
-ADMIN_PASS = env('ADMIN_PASS')  # ОБЯЗАТЕЛЬНО задайте на проде
+ADMIN_PASS = env('ADMIN_PASS')  # ОБЯЗАТЕЛЬНО задать в проде
 
 def _need_auth():
     return Response("Требуется авторизация", 401,
@@ -42,41 +44,45 @@ def requires_admin(fn):
         return fn(*args, **kwargs) if ok else _need_auth()
     return wrapper
 
-# ── База данных: внешний Postgres (DATABASE_URL) или локальный SQLite ─────────
+# ── База данных ────────────────────────────────────────────────────────────────
 db_url = env('DATABASE_URL')
-if db_url:
-    # Vercel/Heroku могут отдавать префикс postgres:// → исправим
-    if db_url.startswith('postgres://'):
-        db_url = db_url.replace('postgres://', 'postgresql://', 1)
-else:
-    db_url = 'sqlite:///' + os.path.join(ROOT_DIR, 'sportclub.db')  # локальная разработка
+if db_url and db_url.startswith('postgres://'):
+    db_url = db_url.replace('postgres://', 'postgresql://', 1)
+if not db_url:
+    db_url = 'sqlite:///' + os.path.join(ROOT_DIR, 'sportclub.db')  # локалка
 
 app.config['SQLALCHEMY_DATABASE_URI'] = db_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
-# ── SMTP (все пароли — из ENV) ────────────────────────────────────────────────
+# ── SMTP ───────────────────────────────────────────────────────────────────────
 app.config['SMTP_SERVER']   = env('SMTP_SERVER', 'smtp.gmail.com')
 app.config['SMTP_PORT']     = int(env('SMTP_PORT', '587'))
 app.config['SMTP_USERNAME'] = env('SMTP_USERNAME', '')
 app.config['SMTP_PASSWORD'] = env('SMTP_PASSWORD', '')
 app.config['EMAIL_TO']      = env('EMAIL_TO', '')
 
-# ── Загрузка файлов: локалка vs. Cloudinary (Vercel: использовать внешний стораж) ─
+# ── Загрузки: Cloudinary в проде; локально — в static/ ─────────────────────────
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
 
-UPLOAD_COACHES = os.path.join(app.static_folder, 'images', 'coaches')
-UPLOAD_NEWS    = os.path.join(app.static_folder, 'images', 'news')
-for p in (UPLOAD_COACHES, UPLOAD_NEWS):
-    os.makedirs(p, exist_ok=True)  # локалка; на Vercel это эфемерно
+# относительные подпапки внутри /static
+COACHES_SUB = 'images/coaches'
+NEWS_SUB    = 'images/news'
 
-app.config['UPLOAD_FOLDER']       = UPLOAD_COACHES
-app.config['UPLOAD_FOLDER_NEWS']  = UPLOAD_NEWS
+UPLOAD_COACHES = os.path.join(app.static_folder, COACHES_SUB)
+UPLOAD_NEWS    = os.path.join(app.static_folder, NEWS_SUB)
 
-def allowed_file(filename: str) -> bool:
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+app.config['UPLOAD_FOLDER'] = UPLOAD_COACHES
+app.config['UPLOAD_FOLDER_NEWS'] = UPLOAD_NEWS
 
-# Опционально: Cloudinary для продакшена (CLOUDINARY_URL в ENV)
+# На Vercel (read-only) каталоги не создаём.
+if not IS_SERVERLESS:
+    os.makedirs(UPLOAD_COACHES, exist_ok=True)
+    os.makedirs(UPLOAD_NEWS,    exist_ok=True)
+else:
+    print("Serverless detected: skip creating static/ directories; uploads require external storage.")
+
+# Cloudinary (если задан CLOUDINARY_URL)
 CLOUDINARY_URL = env('CLOUDINARY_URL')
 if CLOUDINARY_URL:
     try:
@@ -89,34 +95,52 @@ if CLOUDINARY_URL:
 else:
     app.config['USE_CLOUDINARY'] = False
 
+def allowed_file(fname:str) -> bool:
+    return '.' in fname and fname.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
 def save_image(file_storage, subfolder='uploads'):
     """
-    Возвращает URL изображения.
-    - Если настроен Cloudinary → публичный HTTPS-URL.
-    - Иначе сохраняет в /static/<subfolder>/ (только для локальной разработки).
+    Возвращает URL изображения:
+      • при настроенном Cloudinary — HTTPS-URL из облака;
+      • локально — путь в /static/<subfolder>/;
+      • на Vercel без Cloudinary — None (загрузки отключены).
     """
     if not file_storage or file_storage.filename == '' or not allowed_file(file_storage.filename):
         return None
 
+    # Облако в проде
     if app.config.get('USE_CLOUDINARY'):
-        res = cloudinary.uploader.upload(file_storage, folder=f"vershina/{subfolder}")
-        return res.get('secure_url')
+        try:
+            res = cloudinary.uploader.upload(file_storage, folder=f"vershina/{subfolder}")
+            return res.get('secure_url')
+        except Exception as e:
+            print("Cloudinary upload error:", e)
+            return None
 
+    # На Vercel без облака — не сохраняем (read-only FS)
+    if IS_SERVERLESS:
+        print("Uploads disabled on serverless without CLOUDINARY_URL.")
+        return None
+
+    # Локальная разработка: сохраняем в static/
     fname = secure_filename(file_storage.filename)
     local_dir = os.path.join(app.static_folder, subfolder)
     os.makedirs(local_dir, exist_ok=True)
-    path = os.path.join(local_dir, fname)
-    file_storage.save(path)
-    return url_for('static', filename=f"{subfolder}/{fname}", _external=False)
+    try:
+        file_storage.save(os.path.join(local_dir, fname))
+        return url_for('static', filename=f"{subfolder}/{fname}", _external=False)
+    except OSError as e:
+        print(f"Local save failed: {e}")
+        return None
 
-# ── Создаём таблицы идемпотентно ───────────────────────────────────────────────
+# ── Создание таблиц (идемпотентно) ─────────────────────────────────────────────
 with app.app_context():
     try:
         db.create_all()
     except Exception as e:
         print("DB init skipped:", e)
 
-# ── Базовые security-заголовки ────────────────────────────────────────────────
+# ── Security-заголовки ─────────────────────────────────────────────────────────
 @app.after_request
 def add_security_headers(resp):
     resp.headers['X-Frame-Options'] = 'SAMEORIGIN'
