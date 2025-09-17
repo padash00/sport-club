@@ -1,64 +1,101 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ title }} - Админ-панель СК "Вершина"</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='admin_style.css') }}">
-    
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ title }} - Админ-панель СК "Вершина"</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='admin_style.css') }}">
 </head>
 <body>
-    <div class="admin-container">
-        <div class="admin-nav">
-            <a href="{{ url_for('admin_coaches_list') }}">Управление тренерами</a>
-             <a href="{{ url_for('admin_services_list') }}">Управление услугами</a>
-             <a href="{{ url_for('admin_news_list') }}">Управление новостями</a> 
-            <a href="{{ url_for('index') }}" style="float: right;">На главный сайт</a>
-        </div>
+  <div class="admin-container">
+    <nav class="admin-nav" aria-label="Административная навигация">
+      <a href="{{ url_for('admin_coaches_list') }}" aria-current="page">Управление тренерами</a>
+      <a href="{{ url_for('admin_services_list') }}">Управление услугами</a>
+      <a href="{{ url_for('admin_news_list') }}">Управление новостями</a>
+      <a href="{{ url_for('index') }}" style="margin-left:auto;">На главный сайт</a>
+    </nav>
 
-        <h1>{{ title }}</h1>
-        <form method="POST" action="{{ form_action }}" enctype="multipart/form-data">
-            <div class="form-group">
-                <label for="name">Имя тренера:</label>
-                <input type="text" id="name" name="name" required value="{{ coach.name if coach else '' }}">
-            </div>
-            <div class="form-group">
-                <label for="experience">Опыт и сертификаты (каждый пункт с новой строки):</label>
-                <textarea id="experience" name="experience" rows="5">{{ coach.experience if coach else '' }}</textarea>
-            </div>
-            <div class="form-group">
-                <label for="specialization">Специализация:</label>
-                <input type="text" id="specialization" name="specialization" value="{{ coach.specialization if coach else '' }}">
-            </div>
-            
-            {% if coach and coach.photo_path %}
-                <div class="form-group current-photo">
-                    <label>Текущее фото:</label>
-                    <img src="{{ url_for('static', filename=coach.photo_path) }}" alt="Текущее фото {{ coach.name }}">
-                    <p><small>Загрузите новый файл ниже, чтобы заменить это фото. Если файл не выбран, текущее фото останется.</small></p>
-                </div>
-            {% endif %}
+    <h1>{{ title }}</h1>
 
-            <div class="form-group">
-                <label for="photo_file">Фото тренера (файл):</label>
-                <input type="file" id="photo_file" name="photo_file">
-                {% if not coach or not coach.photo_path %} 
-                    <small>Выберите файл изображения (jpg, png, jpeg, gif).</small>
-                {% endif %}
-            </div>
-            <div class="form-group">
-                <label for="section">Секция:</label>
-                <select id="section" name="section" required>
-                    <option value="" disabled {% if not coach or not coach.section %}selected{% endif %}>-- Выберите секцию --</option>
-                    <option value="ski" {% if coach and coach.section == 'ski' %}selected{% endif %}>Горнолыжная база</option>
-                    <option value="gym" {% if coach and coach.section == 'gym' %}selected{% endif %}>Тренажерный зал</option>
-                </select>
-            </div>
-            <div class="form-actions">
-                <button type="submit" class="submit-button">{{ 'Сохранить изменения' if coach else 'Добавить тренера' }}</button>
-                <a href="{{ url_for('admin_coaches_list') }}" class="cancel-button">Отмена</a>
-            </div>
-        </form>
-    </div>
+    <form method="POST" action="{{ form_action }}" enctype="multipart/form-data" novalidate>
+      <div class="form-group">
+        <label for="name">Имя тренера <span style="color:#dc3545">*</span>:</label>
+        <input
+          type="text"
+          id="name"
+          name="name"
+          required
+          autocomplete="name"
+          maxlength="100"
+          placeholder="Иван Иванов"
+          value="{{ coach.name if coach else '' }}">
+      </div>
+
+      <div class="form-group">
+        <label for="experience">Опыт и сертификаты (каждый пункт с новой строки):</label>
+        <textarea
+          id="experience"
+          name="experience"
+          rows="6"
+          maxlength="2000"
+          placeholder="— 10 лет инструкторской практики&#10;— Сертификат ISIA Level 2&#10;— Курсы первой помощи">
+{{ coach.experience if coach else '' }}</textarea>
+        <small>Подсказка: перенос строки = новый пункт, на сайте мы отобразим их построчно.</small>
+      </div>
+
+      <div class="form-group">
+        <label for="specialization">Специализация:</label>
+        <input
+          type="text"
+          id="specialization"
+          name="specialization"
+          maxlength="200"
+          placeholder="Горные лыжи для новичков, фристайл"
+          value="{{ coach.specialization if coach else '' }}">
+      </div>
+
+      {% if coach and coach.photo_path %}
+      <div class="form-group current-photo">
+        <label>Текущее фото:</label>
+        <img
+          src="{{ url_for('static', filename=coach.photo_path) }}"
+          alt="Текущее фото {{ coach.name }}"
+          loading="lazy">
+        <small>Чтобы заменить фото — загрузите новый файл ниже. Если файл не выбирать, текущее фото сохранится.</small>
+      </div>
+      {% endif %}
+
+      <div class="form-group">
+        <label for="photo_file">Фото тренера (jpg, png, jpeg, gif):</label>
+        <input
+          type="file"
+          id="photo_file"
+          name="photo_file"
+          accept=".jpg,.jpeg,.png,.gif"
+          aria-describedby="photo_help">
+        {% if not coach or not coach.photo_path %}
+          <small id="photo_help">Рекомендуемый размер 600×600+. Квадратное фото смотрится лучше.</small>
+        {% else %}
+          <small id="photo_help">Оставьте поле пустым, чтобы не менять фото.</small>
+        {% endif %}
+      </div>
+
+      <div class="form-group">
+        <label for="section">Секция <span style="color:#dc3545">*</span>:</label>
+        <select id="section" name="section" required>
+          <option value="" disabled {% if not coach or not coach.section %}selected{% endif %}>— Выберите секцию —</option>
+          <option value="ski" {% if coach and coach.section == 'ski' %}selected{% endif %}>Горнолыжная база</option>
+          <option value="gym" {% if coach and coach.section == 'gym' %}selected{% endif %}>Тренажерный зал</option>
+        </select>
+      </div>
+
+      <div class="form-actions">
+        <button type="submit" class="submit-button">
+          {{ 'Сохранить изменения' if coach else 'Добавить тренера' }}
+        </button>
+        <a href="{{ url_for('admin_coaches_list') }}" class="cancel-button">Отмена</a>
+      </div>
+    </form>
+  </div>
 </body>
 </html>

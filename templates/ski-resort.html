@@ -1,151 +1,168 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ title }} - СК "Вершина"</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ title }} - СК "Вершина"</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Roboto:wght@400;500&display=swap" rel="stylesheet">
 </head>
 <body class="ski-theme">
 
-    <header class="site-header">
-        <div class="container">
-            <div class="logo">
-                <a href="{{ url_for('index') }}">СК "Вершина"</a>
-            </div>
-            <nav id="main-nav" class="main-nav">
-    <ul>
-        <li><a href="{{ url_for('ski_resort') }}">Горнолыжная база</a></li>
-        <li><a href="{{ url_for('gym') }}">Тренажерный зал</a></li>
-        <li><a href="{{ url_for('news_list_all') }}">Новости</a></li> 
-        <li><a href="{{ url_for('contacts_page') }}">Контакты</a></li> </ul>
-</nav>
-            <button id="burger-menu" class="burger-menu">
-                <span></span>
-                <span></span>
-                <span></span>
-            </button>
-        </div>
-    </header>
-
-    <main>
-        <section class="page-header">
-            <div class="container">
-                <h1>Горнолыжная база</h1>
-                <p>Все для идеального зимнего отдыха</p>
-            </div>
-        </section>
-
-        <section class="about-section">
-            <div class="container">
-                <h2>О базе</h2>
-                <p>Наша горнолыжная база расположена в живописном месте, в 20 км от города. К вашим услугам 5 трасс различного уровня сложности, современный кресельный подъемник, уютное кафе и теплая раздевалка. Общая протяженность трасс — более 15 км. Мы гарантируем качественное снежное покрытие благодаря системе искусственного оснежения.</p>
-            </div>
-        </section>
-
-        <section id="instructors" class="instructors-section">
-            <div class="container">
-                <h2>Наши инструкторы</h2>
-                {% if coaches %}
-                    <div class="instructors-grid">
-                        {% for coach in coaches %}
-                        <div class="instructor-card">
-                            {% if coach.photo_path %}
-                                <img src="{{ url_for('static', filename=coach.photo_path) }}" alt="{{ coach.name }}">
-                            {% else %}
-                                <img src="{{ url_for('static', filename='images/placeholder-coach.png') }}" alt="Фото отсутствует"> 
-                            {% endif %}
-                            <h4>{{ coach.name }}</h4>
-                            {% if coach.experience %}
-                                <p><strong>Опыт и сертификаты:</strong><br>{{ coach.experience }}</p>
-                            {% endif %}
-                            {% if coach.specialization %}
-                                <p><strong>Специализация:</strong> {{ coach.specialization }}</p>
-                            {% endif %}
-                            <a href="#" class="btn js-open-modal">Записаться к {{ coach.name.split()[0] if coach.name else 'инструктору' }}</a>
-                        </div>
-                        {% endfor %}
-                    </div>
-                {% else %}
-                    <p>На данный момент информация об инструкторах для этой секции обновляется. Загляните позже!</p>
-                {% endif %}
-            </div>
-        </section>
-
-       <section class="pricing-section">
+  <header class="site-header">
     <div class="container">
-        <h2>Прокат и Цены</h2>
-        {% if services %}
-            <table class="price-table">
-                <thead>
-                    <tr>
-                        <th>Услуга / Оборудование</th>
-                        <th>Длительность</th>
-                        <th>Цена</th>
-                        <th>Описание</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for service in services %} {# Используем переменную services #}
-                    <tr>
-                        <td>{{ service.name }}</td>
-                        <td>{{ service.duration if service.duration else '-' }}</td>
-                        <td>{{ "%.0f тг"|format(service.price) }}</td> {# Убрали копейки для тенге #}
-                        <td>{{ service.description if service.description else '-' }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+      <div class="logo">
+        <a href="{{ url_for('index') }}">СК "Вершина"</a>
+      </div>
+
+      <nav id="main-nav" class="main-nav" aria-label="Основная навигация">
+        <ul>
+          <li><a href="{{ url_for('ski_resort') }}" class="active">Горнолыжная база</a></li>
+          <li><a href="{{ url_for('gym') }}">Тренажерный зал</a></li>
+          <li><a href="{{ url_for('news_list_all') }}">Новости</a></li>
+          <li><a href="{{ url_for('contacts_page') }}">Контакты</a></li>
+        </ul>
+      </nav>
+
+      <button id="burger-menu"
+              class="burger-menu"
+              aria-label="Открыть меню"
+              aria-controls="main-nav"
+              aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </header>
+
+  <main>
+    <section class="page-header">
+      <div class="container">
+        <h1>Горнолыжная база</h1>
+        <p>Всё для идеального зимнего отдыха</p>
+      </div>
+    </section>
+
+    <section class="about-section">
+      <div class="container">
+        <h2>О базе</h2>
+        <p>Наша горнолыжная база расположена в живописном месте, в 20 км от города. К вашим услугам 5 трасс различного уровня сложности, современный кресельный подъемник, уютное кафе и тёплая раздевалка. Общая протяжённость трасс — более 15 км. Мы гарантируем качественное снежное покрытие благодаря системе искусственного оснежения.</p>
+      </div>
+    </section>
+
+    <section id="instructors" class="instructors-section">
+      <div class="container">
+        <h2>Наши инструкторы</h2>
+        {% if coaches %}
+          <div class="instructors-grid">
+            {% for coach in coaches %}
+            <div class="instructor-card">
+              {% if coach.photo_path %}
+                <img src="{{ url_for('static', filename=coach.photo_path) }}"
+                     alt="{{ coach.name }}"
+                     loading="lazy">
+              {% else %}
+                <img src="{{ url_for('static', filename='images/placeholder-coach.png') }}"
+                     alt="Фото отсутствует"
+                     loading="lazy">
+              {% endif %}
+
+              <h4>{{ coach.name }}</h4>
+
+              {% if coach.experience %}
+                <p><strong>Опыт и сертификаты:</strong><br>{{ coach.experience|replace('\n','<br>')|safe }}</p>
+              {% endif %}
+              {% if coach.specialization %}
+                <p><strong>Специализация:</strong> {{ coach.specialization }}</p>
+              {% endif %}
+
+              <a href="#" class="btn js-open-modal">Записаться к {{ coach.name.split()[0] if coach.name else 'инструктору' }}</a>
+            </div>
+            {% endfor %}
+          </div>
         {% else %}
-            <p>Информация об услугах и ценах для этой секции скоро будет добавлена. Загляните позже!</p>
+          <p>На данный момент информация об инструкторах для этой секции обновляется. Загляните позже!</p>
         {% endif %}
+      </div>
+    </section>
+
+    <section class="pricing-section">
+      <div class="container">
+        <h2>Прокат и цены</h2>
+        {% if services %}
+          <table class="price-table">
+            <thead>
+              <tr>
+                <th>Услуга / Оборудование</th>
+                <th>Длительность</th>
+                <th>Цена</th>
+                <th>Описание</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for service in services %}
+              <tr>
+                <td>{{ service.name }}</td>
+                <td>{{ service.duration if service.duration else '-' }}</td>
+                <td>{{ "%.0f тг"|format(service.price) }}</td>
+                <td>{{ service.description if service.description else '-' }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        {% else %}
+          <p>Информация об услугах и ценах для этой секции скоро будет добавлена. Загляните позже!</p>
+        {% endif %}
+      </div>
+    </section>
+  </main>
+
+  <footer id="contacts-section" class="site-footer">
+    <div class="container">
+      <div class="footer-widget">
+        <h4>Контакты</h4>
+        <p>Адрес: г. Горный, ул. Снежная, д. 1</p>
+        <p>Телефон: +7 (707) 123-45-67</p>
+        <p>Email: info@vershina-club.kz</p>
+      </div>
+      <div class="footer-widget">
+        <h4>Мы в соцсетях</h4>
+        <ul class="social-links">
+          <li><a href="#">Instagram</a></li>
+          <li><a href="#">VK</a></li>
+          <li><a href="#">Telegram</a></li>
+        </ul>
+      </div>
     </div>
-</section>
-
-    </main>
-
-    <footer id="contacts-section" class="site-footer">
-        <div class="container">
-            <div class="footer-widget">
-                <h4>Контакты</h4>
-                <p>Адрес: г. Горный, ул. Снежная, д. 1</p>
-                <p>Телефон: +7 (707) 123-45-67</p>
-                <p>Email: info@vershina-club.kz</p>
-            </div>
-            <div class="footer-widget">
-                <h4>Мы в соцсетях</h4>
-                <ul class="social-links">
-                    <li><a href="#">Instagram</a></li>
-                    <li><a href="#">VK</a></li>
-                    <li><a href="#">Telegram</a></li>
-                </ul>
-            </div>
-        </div>
-        <div class="copyright">
-            <p>&copy; 2025, СК "Вершина". Все права защищены.</p>
-        </div>
-    </footer>
-
-    <div id="modal-signup" class="modal-overlay">
-        <div class="modal-window">
-            <div class="modal-header">
-                <h3>Запись на занятие</h3>
-                <button class="close-modal">&times;</button>
-            </div>
-            <div class="modal-body">
-                <p>Оставьте ваши данные, и мы свяжемся с вами для подтверждения записи.</p>
-                <form class="modal-form" action="{{ url_for('submit_form') }}" method="POST">
-                    <input type="text" name="userName" placeholder="Ваше имя" required>
-                    <input type="tel" name="userPhone" placeholder="Ваш номер телефона" required>
-                    <button type="submit" class="btn">Отправить заявку</button>
-                </form>
-            </div>
-        </div>
+    <div class="copyright">
+      <p>&copy; 2025, СК "Вершина". Все права защищены.</p>
     </div>
+  </footer>
 
-    <script src="{{ url_for('static', filename='script.js') }}" defer></script>
+  <!-- Модалка записи -->
+  <div id="modal-signup"
+       class="modal-overlay"
+       role="dialog"
+       aria-modal="true"
+       aria-labelledby="modal-title"
+       tabindex="-1">
+    <div class="modal-window">
+      <div class="modal-header">
+        <h3 id="modal-title">Запись на занятие</h3>
+        <button class="close-modal" aria-label="Закрыть">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p>Оставьте ваши данные, и мы свяжемся с вами для подтверждения записи.</p>
+        <form class="modal-form" action="{{ url_for('submit_form') }}" method="POST">
+          <input type="text" name="userName" placeholder="Ваше имя" required>
+          <input type="tel"  name="userPhone" placeholder="Ваш номер телефона" required>
+          <button type="submit" class="btn">Отправить заявку</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script src="{{ url_for('static', filename='script.js') }}" defer></script>
 </body>
 </html>

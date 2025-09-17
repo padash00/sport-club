@@ -1,207 +1,197 @@
-/* static/admin_style.css */
-body {
-    font-family: 'Roboto', sans-serif;
-    background-color: #f0f2f5; /* Более нейтральный фон для админки */
-    color: #495057; /* Чуть мягче черный для текста */
-    margin: 0;
-    padding: 20px; /* Добавим немного воздуха по краям */
-    font-size: 15px;
-    line-height: 1.6;
+/* ===============================
+   ADMIN THEME — variables
+   =============================== */
+:root{
+  --brand:#0d2c4e;
+  --brand-2:#005A9C;
+  --brand-2-dark:#004170;
+
+  --bg:#f0f2f5;
+  --card:#ffffff;
+  --text:#495057;
+  --muted:#6c757d;
+  --border:#dee2e6;
+
+  --radius:10px;
+  --radius-sm:6px;
+
+  --shadow-xs:0 1px 2px rgba(0,0,0,.04);
+  --shadow-sm:0 2px 10px rgba(0,0,0,.08);
 }
 
-.admin-container {
-    max-width: 1100px; /* Можно сделать шире, если нужно */
-    margin: 20px auto;
-    padding: 30px;
-    background-color: #ffffff;
-    border-radius: 8px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+/* ===============================
+   base
+   =============================== */
+*,
+*::before,
+*::after{ box-sizing:border-box; }
+
+body{
+  margin:0;
+  font-family:'Roboto', system-ui, -apple-system, Segoe UI, Arial, sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  font-size:15px;
+  line-height:1.6;
 }
 
-.admin-nav {
-    background-color: #343a40; /* Темный фон для навигации */
-    padding: 12px 25px;
-    border-radius: 6px;
-    margin-bottom: 30px;
-    display: flex; /* Для выравнивания элементов */
-    align-items: center; /* Выравнивание по центру */
+:focus-visible{
+  outline:3px solid var(--brand-2);
+  outline-offset:2px;
 }
 
-.admin-nav a {
-    color: #f8f9fa; /* Светлый текст на темном фоне */
-    text-decoration: none;
-    margin-right: 20px;
-    font-weight: 500;
-    padding: 8px 0;
-    border-bottom: 2px solid transparent;
-    transition: color 0.2s ease, border-bottom-color 0.2s ease;
+img{ max-width:100%; display:block; }
+
+/* ===============================
+   layout
+   =============================== */
+.admin-container{
+  max-width:1200px;
+  margin:22px auto;
+  padding:28px;
+  background:var(--card);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow-sm);
 }
 
-.admin-nav a:hover, 
-.admin-nav a.active { /* Класс 'active' можно будет добавлять через Flask/Jinja, если нужно */
-    color: #ffc107; /* Яркий акцент для активной ссылки/ховера */
-    border-bottom-color: #ffc107;
+h1,h2,h3,h4,h5,h6{
+  font-family:'Montserrat',sans-serif;
+  color:#2c3e50;
+  margin:0 0 .6em;
 }
+h1{
+  font-size:26px;
+  padding-bottom:14px;
+  border-bottom:1px solid var(--border);
+}
+h2{ font-size:22px; margin-top:28px; }
 
-.admin-nav a[href*="index"] { /* Ссылка "На главный сайт" */
-    margin-left: auto; /* Отодвигаем вправо */
-    margin-right: 0;
+/* ===============================
+   top nav
+   =============================== */
+.admin-nav{
+  background:#343a40;
+  padding:12px 18px;
+  border-radius:var(--radius-sm);
+  margin-bottom:24px;
+  display:flex; align-items:center; gap:18px;
+  box-shadow:var(--shadow-xs);
 }
+.admin-nav a{
+  color:#f8f9fa; text-decoration:none; font-weight:600;
+  border-bottom:2px solid transparent; padding:6px 0;
+  transition:color .2s, border-color .2s;
+}
+.admin-nav a:hover,
+.admin-nav a.active{ color:#ffc107; border-bottom-color:#ffc107; }
+.admin-nav a[href*="index"]{ margin-left:auto; }
 
-h1, h2, h3, h4, h5, h6 {
-    font-family: 'Montserrat', sans-serif;
-    color: #2c3e50; /* Темно-синий для заголовков */
-    margin-top: 0;
+/* ===============================
+   actions / buttons
+   =============================== */
+.admin-actions a,
+.admin-actions button,
+.add-button,
+.submit-button,
+.cancel-button{
+  display:inline-block;
+  text-decoration:none;
+  padding:9px 16px;
+  border-radius:8px;
+  font-size:14px;
+  font-weight:600;
+  border:1px solid transparent;
+  cursor:pointer;
+  transition:transform .15s ease, background .2s ease, border-color .2s ease;
+  line-height:1.4;
+  margin-right:8px; margin-bottom:6px;
 }
-h1 {
-    font-size: 26px;
-    margin-bottom: 25px;
-    border-bottom: 1px solid #dee2e6;
-    padding-bottom: 15px;
-}
-h2 {
-    font-size: 22px;
-    margin-top: 30px;
-    margin-bottom: 20px;
-}
+.add-button{ background:#007bff; color:#fff; border-color:#007bff; }
+.add-button:hover{ background:#0069d9; border-color:#0062cc; transform:translateY(-1px); }
 
-/* Таблицы */
-.admin-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 20px;
-    border: 1px solid #dee2e6;
-    border-radius: 6px; /* Скругление для всей таблицы */
-    overflow: hidden; /* Чтобы скругление работало */
-    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
-}
+.edit-button{ background:#ffc107; color:#212529; border-color:#ffc107; }
+.edit-button:hover{ background:#e0a800; border-color:#d39e00; transform:translateY(-1px); }
 
-.admin-table th, .admin-table td {
-    border-bottom: 1px solid #dee2e6; /* Только нижние границы для строк */
-    padding: 12px 15px;
-    text-align: left;
-    vertical-align: middle;
-}
-.admin-table td:first-child, .admin-table th:first-child { padding-left: 20px; }
-.admin-table td:last-child, .admin-table th:last-child { padding-right: 20px; }
+.delete-button{ background:#dc3545; color:#fff; border-color:#dc3545; }
+.delete-button:hover{ background:#c82333; border-color:#bd2130; transform:translateY(-1px); }
 
+.submit-button{ background:#28a745; color:#fff; border-color:#28a745; }
+.submit-button:hover{ background:#218838; border-color:#1e7e34; transform:translateY(-1px); }
 
-.admin-table th {
-    background-color: #f8f9fa;
-    font-weight: 600;
-    color: #343a40;
-    border-top: none; /* Убираем верхнюю границу у заголовков */
-}
-.admin-table tr:last-child td {
-    border-bottom: none; /* Убираем нижнюю границу у последней строки */
-}
+.cancel-button{ background:#6c757d; color:#fff; border-color:#6c757d; }
+.cancel-button:hover{ background:#5a6268; border-color:#545b62; transform:translateY(-1px); }
 
-.admin-table tbody tr:hover {
-    background-color: #f1f3f5;
-}
-
-.admin-table img {
-    border-radius: 4px;
-    vertical-align: middle;
-}
-
-/* Кнопки и ссылки действий */
-.admin-actions a, .admin-actions button, 
-.add-button, .submit-button, .cancel-button {
-    text-decoration: none;
-    padding: 9px 16px;
-    border-radius: 5px;
-    font-size: 14px;
-    font-weight: 500;
-    border: 1px solid transparent; /* Добавляем рамку для консистентности */
-    cursor: pointer;
-    transition: all 0.2s ease;
-    display: inline-block; 
-    margin-right: 8px;
-    margin-bottom: 5px; 
-    line-height: 1.5; /* Для лучшего вида текста в кнопке */
-}
-
-.add-button {
-    background-color: #007bff; color: white; border-color: #007bff;
-}
-.add-button:hover { background-color: #0069d9; border-color: #0062cc; }
-
-.edit-button {
-    background-color: #ffc107; color: #212529; border-color: #ffc107;
-}
-.edit-button:hover { background-color: #e0a800; border-color: #d39e00; }
-    
-.delete-button {
-    background-color: #dc3545; color: white; border-color: #dc3545;
-}
-.delete-button:hover { background-color: #c82333; border-color: #bd2130;}
-
-.submit-button {
-    background-color: #28a745; color: white; border-color: #28a745;
-}
-.submit-button:hover { background-color: #218838; border-color: #1e7e34; }
-
-.cancel-button {
-    background-color: #6c757d; color: white; border-color: #6c757d;
-}
-.cancel-button:hover { background-color: #5a6268; border-color: #545b62; }
-
-/* Формы */
-.form-group {
-    margin-bottom: 20px;
-}
-.form-group label {
-    display: block;
-    margin-bottom: 8px;
-    font-weight: 600;
-    color: #495057;
+/* ===============================
+   forms
+   =============================== */
+.form-group{ margin-bottom:18px; }
+.form-group label{
+  display:block; margin-bottom:8px; font-weight:700; color:#2c3e50;
 }
 .form-group input[type="text"],
 .form-group input[type="file"],
 .form-group input[type="number"],
 .form-group textarea,
-.form-group select {
-    width: 100%;
-    padding: 10px 12px;
-    border: 1px solid #ced4da;
-    border-radius: 4px;
-    box-sizing: border-box;
-    font-size: 15px;
-    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+.form-group select{
+  width:100%; padding:11px 12px;
+  border:1px solid var(--border);
+  border-radius:8px;
+  background:#fff;
+  font-size:15px;
+  transition:border-color .15s, box-shadow .15s;
 }
-.form-group input:focus, 
-.form-group textarea:focus, 
-.form-group select:focus {
-    border-color: #80bdff;
-    outline: 0;
-    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+.form-group input:focus,
+.form-group textarea:focus,
+.form-group select:focus{
+  border-color:#80bdff;
+  box-shadow:0 0 0 .2rem rgba(0,123,255,.25);
+  outline:0;
 }
-.form-group textarea {
-    min-height: 120px;
-    resize: vertical;
+.form-group textarea{ min-height:120px; resize:vertical; }
+.form-group small{ color:var(--muted); display:block; margin-top:6px; }
+
+.current-photo img{
+  max-width:150px; max-height:150px;
+  border-radius:8px; border:1px solid var(--border); object-fit:cover;
+  margin-top:10px;
 }
-.form-group small {
-    font-size: 0.875em;
-    color: #6c757d;
-    display: block;
-    margin-top: 5px;
+
+/* errors */
+.error-message{
+  color:#721c24; background:#f8d7da; border:1px solid #f5c6cb;
+  padding:.75rem 1rem; border-radius:8px; margin:10px 0 16px;
 }
-.current-photo img {
-    display: block; 
-    max-width: 150px; 
-    max-height: 150px; 
-    margin-top: 10px; 
-    border-radius: 4px; 
-    border: 1px solid #dee2e6; 
-    object-fit: cover;
+
+/* ===============================
+   tables
+   =============================== */
+.admin-table{
+  width:100%; border-collapse:collapse; margin-top:16px;
+  border:1px solid var(--border);
+  border-radius:10px; overflow:hidden;
+  box-shadow:var(--shadow-xs);
+  background:#fff;
 }
-.error-message {
-    color: #721c24;
-    background-color: #f8d7da;
-    border-color: #f5c6cb;
-    padding: .75rem 1.25rem;
-    margin-bottom: 1rem;
-    border: 1px solid transparent;
-    border-radius: .25rem;
+.admin-table th, .admin-table td{
+  padding:12px 14px; border-bottom:1px solid var(--border);
+  vertical-align:middle; text-align:left;
 }
+.admin-table th{
+  background:#f8f9fa; color:#343a40; font-weight:700;
+}
+.admin-table tr:last-child td{ border-bottom:none; }
+.admin-table tbody tr:hover{ background:#f1f3f5; }
+.admin-table img{ border-radius:6px; }
+
+/* compact cells on small screens */
+@media (max-width: 760px){
+  .admin-table{
+    display:block; overflow-x:auto; white-space:nowrap;
+    -webkit-overflow-scrolling:touch;
+  }
+  .admin-table th, .admin-table td{ white-space:nowrap; }
+}
+
+/* spacing tweaks */
+.admin-table td:first-child, .admin-table th:first-child{ padding-left:20px; }
+.admin-table td:last-child, .admin-table th:last-child{ padding-right:20px; }

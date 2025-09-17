@@ -1,58 +1,140 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <title>{{ title }} - Админ-панель СК "Вершина"</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='admin_style.css') }}">
-    
+  <meta charset="UTF-8">
+  <title>{{ title }} - Админ-панель СК "Вершина"</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="{{ url_for('static', filename='admin_style.css') }}">
+  <style>
+    /* только мелкие улучшения для этой формы */
+    .muted{color:#6c757d;font-size:.9em}
+    .preview{margin-top:10px;display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap}
+    .preview img{max-width:220px;max-height:160px;border-radius:6px;border:1px solid #dee2e6;object-fit:cover}
+    .counter{float:right;font-size:.85em;color:#6c757d}
+  </style>
 </head>
 <body>
-    <div class="admin-container">
-        <div class="admin-nav">
-            <a href="{{ url_for('admin_coaches_list') }}">Управление тренерами</a>
-            <a href="{{ url_for('admin_services_list') }}">Управление услугами</a>
-            <a href="{{ url_for('admin_news_list') }}">Управление новостями</a>
-            <a href="{{ url_for('index') }}" style="float: right;">На главный сайт</a>
+  <div class="admin-container">
+    <nav class="admin-nav" aria-label="Административная навигация">
+      <a href="{{ url_for('admin_coaches_list') }}">Управление тренерами</a>
+      <a href="{{ url_for('admin_services_list') }}">Управление услугами</a>
+      <a href="{{ url_for('admin_news_list') }}" aria-current="page">Управление новостями</a>
+      <a href="{{ url_for('index') }}" style="margin-left:auto;">На главный сайт</a>
+    </nav>
+
+    <h1>{{ title }}</h1>
+    {% if error %}
+      <p class="error-message">{{ error }}</p>
+    {% endif %}
+
+    <form method="POST" action="{{ form_action }}" enctype="multipart/form-data" novalidate>
+      <div class="form-group">
+        <label for="title">Заголовок новости <span style="color:#dc3545">*</span>:</label>
+        <span class="counter" id="titleCounter" aria-live="polite"></span>
+        <input
+          type="text"
+          id="title"
+          name="title"
+          required
+          maxlength="200"
+          placeholder="Например: Открытие сезона и новые абонементы"
+          value="{{ article.title if article else '' }}">
+        <small class="muted">До 200 символов — это поле идёт в список и SEO-title.</small>
+      </div>
+
+      <div class="form-group">
+        <label for="content">Текст новости <span style="color:#dc3545">*</span>:</label>
+        <span class="counter" id="contentCounter" aria-live="polite"></span>
+        <textarea
+          id="content"
+          name="content"
+          rows="12"
+          required
+          maxlength="20000"
+          placeholder="Полный текст новости. Пустые строки = абзацы.">{{ article.content if article else '' }}</textarea>
+        <small class="muted">Переносы строк сохраняются при отображении.</small>
+      </div>
+
+      {% if article and article.image_path %}
+        <!-- сохраняем старый путь, если не загрузят новое изображение -->
+        <input type="hidden" name="image_path_text_fallback" value="{{ article.image_path }}">
+        <div class="form-group current-photo">
+          <label>Текущая картинка:</label>
+          <div class="preview">
+            <img src="{{ url_for('static', filename=article.image_path) }}"
+                 alt="Текущая картинка «{{ article.title }}»"
+                 loading="lazy">
+            <div class="muted">
+              Загрузите файл ниже, чтобы заменить. Если ничего не выбирать — останется текущая.
+            </div>
+          </div>
         </div>
+      {% endif %}
 
-        <h1>{{ title }}</h1>
-        {% if error %}
-            <p class="error-message">{{ error }}</p>
-        {% endif %}
+      <div class="form-group">
+        <label for="image_file">Картинка для новости (опционально):</label>
+        <input
+          type="file"
+          id="image_file"
+          name="image_file"
+          accept=".jpg,.jpeg,.png,.gif"
+          aria-describedby="imgHelp">
+        <small id="imgHelp" class="muted">
+          Рекомендуем соотношение 16:9, ширина ≥ 1200px. Поддержка: JPG/PNG/GIF.
+        </small>
 
-        <form method="POST" action="{{ form_action }}" enctype="multipart/form-data">
-            <div class="form-group">
-                <label for="title">Заголовок новости <span style="color:red;">*</span>:</label>
-                <input type="text" id="title" name="title" required value="{{ article.title if article else '' }}">
-            </div>
-            <div class="form-group">
-                <label for="content">Текст новости <span style="color:red;">*</span>:</label>
-                <textarea id="content" name="content" rows="10" required>{{ article.content if article else '' }}</textarea>
-            </div>
-            
-            {% if article and article.image_path %}
-                <div class="form-group current-photo">
-                    <label>Текущая картинка:</label>
-                    <img src="{{ url_for('static', filename=article.image_path) }}" alt="Текущая картинка {{ article.title }}">
-                    <p><small>Загрузите новый файл ниже, чтобы заменить. Если файл не выбран, картинка останется (при редактировании).</small></p>
-                </div>
-            {% endif %}
+        <!-- превью нового выбранного файла -->
+        <div id="newPreview" class="preview" style="display:none;">
+          <img id="newPreviewImg" alt="Предпросмотр выбранного изображения">
+          <div class="muted">Это предпросмотр нового файла. Он будет загружен после сохранения.</div>
+        </div>
+      </div>
 
-            <div class="form-group">
-                <label for="image_file">Картинка для новости (файл, опционально):</label>
-                <input type="file" id="image_file" name="image_file">
-                {% if not article or not article.image_path %} 
-                    <small>Выберите файл изображения (jpg, png, jpeg, gif). Если не выбрано, картинка не будет добавлена.</small>
-                {% else %}
-                    <small>Если вы не выберете новый файл, текущая картинка не изменится.</small>
-                {% endif %}
-            </div>
+      <div class="form-actions">
+        <button type="submit" class="submit-button">
+          {{ 'Сохранить изменения' if article else 'Добавить новость' }}
+        </button>
+        <a href="{{ url_for('admin_news_list') }}" class="cancel-button">Отмена</a>
+      </div>
+    </form>
+  </div>
 
-            <div class="form-actions">
-                <button type="submit" class="submit-button">{{ 'Сохранить изменения' if article else 'Добавить новость' }}</button>
-                <a href="{{ url_for('admin_news_list') }}" class="cancel-button">Отмена</a>
-            </div>
-        </form>
-    </div>
+  <script>
+    // счётчики символов
+    (function(){
+      const title = document.getElementById('title');
+      const content = document.getElementById('content');
+      const tC = document.getElementById('titleCounter');
+      const cC = document.getElementById('contentCounter');
+      if (title) {
+        const upd = () => tC.textContent = `${title.value.length}/${title.maxLength}`;
+        title.addEventListener('input', upd); upd();
+      }
+      if (content) {
+        const upd2 = () => cC.textContent = `${content.value.length}/${content.maxLength}`;
+        content.addEventListener('input', upd2); upd2();
+      }
+    })();
+
+    // предпросмотр выбранного изображения
+    (function(){
+      const input = document.getElementById('image_file');
+      const box = document.getElementById('newPreview');
+      const img = document.getElementById('newPreviewImg');
+      if (!input || !box || !img) return;
+
+      input.addEventListener('change', () => {
+        const file = input.files && input.files[0];
+        if (!file) { box.style.display = 'none'; return; }
+        if (!/^image\//.test(file.type)) { box.style.display = 'none'; return; }
+        const reader = new FileReader();
+        reader.onload = e => {
+          img.src = e.target.result;
+          box.style.display = '';
+        };
+        reader.readAsDataURL(file);
+      });
+    })();
+  </script>
 </body>
 </html>

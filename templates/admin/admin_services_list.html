@@ -1,100 +1,234 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ title }} - Админ-панель СК "Вершина"</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='admin_style.css') }}">
-    
+  <meta charset="UTF-8">
+  <title>{{ title }} - Админ-панель СК "Вершина"</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="{{ url_for('static', filename='admin_style.css') }}">
+  <style>
+    .table-tools{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:10px 0 16px}
+    .table-tools .grow{flex:1 1 260px}
+    .muted{color:#6c757d;font-size:.9em}
+    th.sortable{cursor:pointer;user-select:none}
+    th.sortable .arrow{opacity:.35;margin-left:6px}
+    th.sortable.active .arrow{opacity:1}
+    .nowrap{white-space:nowrap}
+    .w-desc{max-width:480px}
+  </style>
 </head>
 <body>
-    <div class="admin-container">
-        <div class="admin-nav">
-            <a href="{{ url_for('admin_coaches_list') }}">Управление тренерами</a>
-            <a href="{{ url_for('admin_services_list') }}">Управление услугами</a>
-            <a href="{{ url_for('admin_news_list') }}">Управление новостями</a> 
-            <a href="{{ url_for('index') }}" style="float: right;">На главный сайт</a>
-        </div>
+  <div class="admin-container">
+    <nav class="admin-nav" aria-label="Административная навигация">
+      <a href="{{ url_for('admin_coaches_list') }}">Управление тренерами</a>
+      <a href="{{ url_for('admin_services_list') }}" aria-current="page">Управление услугами</a>
+      <a href="{{ url_for('admin_news_list') }}">Управление новостями</a>
+      <a href="{{ url_for('index') }}" style="margin-left:auto;">На главный сайт</a>
+    </nav>
 
-        <h1>{{ title }}</h1>
-        
-        <a href="{{ url_for('admin_add_service') }}" class="add-button">Добавить новую услугу</a>
+    <h1>{{ title }}</h1>
 
-        <h2>Услуги Горнолыжной Базы</h2>
-        {% if services_ski %}
-            <table class="admin-table">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Название</th>
-                        <th>Цена</th>
-                        <th>Длительность</th>
-                        <th>Описание</th>
-                        <th>Действия</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for service in services_ski %}
-                    <tr>
-                        <td>{{ service.id }}</td>
-                        <td>{{ service.name }}</td>
-                        <td>{{ "%.2f тг"|format(service.price) }}</td>
-                        <td>{{ service.duration if service.duration else '-' }}</td>
-                        <td>{{ service.description if service.description else '-' }}</td>
-                        <td class="admin-actions">
-                            <a href="{{ url_for('admin_edit_service', service_id=service.id) }}" class="edit-button">Ред.</a>
-                            <form method="POST" action="{{ url_for('admin_delete_service', service_id=service.id) }}" style="display: inline;">
-                                <button type="submit" class="delete-button"
-                                        onclick="return confirm('Вы уверены, что хотите удалить эту услугу: {{ service.name }}? Это действие необратимо.');">
-                                    Удал.
-                                </button>
-                            </form>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        {% else %}
-            <p>Пока нет услуг для горнолыжной базы.</p>
-        {% endif %}
-
-        <h2>Услуги Тренажерного и Батутного Зала</h2>
-        {% if services_gym %}
-            <table class="admin-table">
-                 <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Название</th>
-                        <th>Цена</th>
-                        <th>Длительность</th>
-                        <th>Описание</th>
-                        <th>Действия</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for service in services_gym %}
-                    <tr>
-                        <td>{{ service.id }}</td>
-                        <td>{{ service.name }}</td>
-                        <td>{{ "%.2f тг"|format(service.price) }}</td>
-                        <td>{{ service.duration if service.duration else '-' }}</td>
-                        <td>{{ service.description if service.description else '-' }}</td>
-                        <td class="admin-actions">
-                            <a href="{{ url_for('admin_edit_service', service_id=service.id) }}" class="edit-button">Ред.</a>
-                            <form method="POST" action="{{ url_for('admin_delete_service', service_id=service.id) }}" style="display: inline;">
-                                <button type="submit" class="delete-button"
-                                        onclick="return confirm('Вы уверены, что хотите удалить эту услугу: {{ service.name }}? Это действие необратимо.');">
-                                    Удал.
-                                </button>
-                            </form>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        {% else %}
-            <p>Пока нет услуг для тренажерного и батутного зала.</p>
-        {% endif %}
+    <div class="table-tools" role="region" aria-label="Действия">
+      <a href="{{ url_for('admin_add_service') }}" class="add-button">Добавить новую услугу</a>
     </div>
+
+    <!-- ==== SKI ==== -->
+    <h2>Услуги Горнолыжной Базы</h2>
+    <div class="table-tools" role="region" aria-label="Фильтры горнолыжной базы">
+      <input id="skiFilter" class="grow" type="text" placeholder="Поиск по названию…" aria-label="Поиск по названию услуги">
+      <label class="muted" style="display:flex;align-items:center;gap:6px;">
+        <input type="checkbox" id="skiWithDur"> только с длительностью
+      </label>
+      <label class="muted" style="display:flex;align-items:center;gap:6px;">
+        <input type="checkbox" id="skiWithDesc"> только с описанием
+      </label>
+      <span id="skiCount" class="muted" aria-live="polite"></span>
+    </div>
+
+    {% if services_ski %}
+      <table class="admin-table" id="table-ski" aria-describedby="skiCount">
+        <thead>
+          <tr>
+            <th scope="col" class="sortable" data-type="number">ID <span class="arrow">⇅</span></th>
+            <th scope="col" class="sortable" data-type="text">Название <span class="arrow">⇅</span></th>
+            <th scope="col" class="sortable nowrap" data-type="number">Цена <span class="arrow">⇅</span></th>
+            <th scope="col" class="sortable" data-type="text">Длительность <span class="arrow">⇅</span></th>
+            <th scope="col" class="w-desc">Описание</th>
+            <th scope="col">Действия</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for service in services_ski %}
+          <tr
+            data-hasdur="{{ '1' if service.duration else '0' }}"
+            data-hasdesc="{{ '1' if service.description else '0' }}">
+            <td data-value="{{ service.id }}">{{ service.id }}</td>
+            <td class="name-cell">{{ service.name }}</td>
+            <td class="price-cell nowrap"
+                data-price="{{ '%.2f'|format(service.price) if service.price is not none else '' }}">
+              {{ '%.0f'|format(service.price) if service.price is not none else '—' }} тг
+            </td>
+            <td>{{ service.duration if service.duration else '—' }}</td>
+            <td>{{ service.description if service.description else '—' }}</td>
+            <td class="admin-actions">
+              <a href="{{ url_for('admin_edit_service', service_id=service.id) }}" class="edit-button" title="Редактировать {{ service.name }}">Ред.</a>
+              <form method="POST" action="{{ url_for('admin_delete_service', service_id=service.id) }}" style="display:inline;"
+                    onsubmit="return confirm('Удалить услугу «{{ service.name }}»? Это действие необратимо.');">
+                <button type="submit" class="delete-button" aria-label="Удалить услугу {{ service.name }}">Удал.</button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p>Пока нет услуг для горнолыжной базы.</p>
+    {% endif %}
+
+    <!-- ==== GYM ==== -->
+    <h2>Услуги Тренажерного и Батутного Зала</h2>
+    <div class="table-tools" role="region" aria-label="Фильтры тренажерного зала">
+      <input id="gymFilter" class="grow" type="text" placeholder="Поиск по названию…" aria-label="Поиск по названию услуги">
+      <label class="muted" style="display:flex;align-items:center;gap:6px;">
+        <input type="checkbox" id="gymWithDur"> только с длительностью
+      </label>
+      <label class="muted" style="display:flex;align-items:center;gap:6px;">
+        <input type="checkbox" id="gymWithDesc"> только с описанием
+      </label>
+      <span id="gymCount" class="muted" aria-live="polite"></span>
+    </div>
+
+    {% if services_gym %}
+      <table class="admin-table" id="table-gym" aria-describedby="gymCount">
+        <thead>
+          <tr>
+            <th scope="col" class="sortable" data-type="number">ID <span class="arrow">⇅</span></th>
+            <th scope="col" class="sortable" data-type="text">Название <span class="arrow">⇅</span></th>
+            <th scope="col" class="sortable nowrap" data-type="number">Цена <span class="arrow">⇅</span></th>
+            <th scope="col" class="sortable" data-type="text">Длительность <span class="arrow">⇅</span></th>
+            <th scope="col" class="w-desc">Описание</th>
+            <th scope="col">Действия</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for service in services_gym %}
+          <tr
+            data-hasdur="{{ '1' if service.duration else '0' }}"
+            data-hasdesc="{{ '1' if service.description else '0' }}">
+            <td data-value="{{ service.id }}">{{ service.id }}</td>
+            <td class="name-cell">{{ service.name }}</td>
+            <td class="price-cell nowrap"
+                data-price="{{ '%.2f'|format(service.price) if service.price is not none else '' }}">
+              {{ '%.0f'|format(service.price) if service.price is not none else '—' }} тг
+            </td>
+            <td>{{ service.duration if service.duration else '—' }}</td>
+            <td>{{ service.description if service.description else '—' }}</td>
+            <td class="admin-actions">
+              <a href="{{ url_for('admin_edit_service', service_id=service.id) }}" class="edit-button" title="Редактировать {{ service.name }}">Ред.</a>
+              <form method="POST" action="{{ url_for('admin_delete_service', service_id=service.id) }}" style="display:inline;"
+                    onsubmit="return confirm('Удалить услугу «{{ service.name }}»? Это действие необратимо.');">
+                <button type="submit" class="delete-button" aria-label="Удалить услугу {{ service.name }}">Удал.</button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p>Пока нет услуг для тренажерного и батутного зала.</p>
+    {% endif %}
+  </div>
+
+  <script>
+    // Форматирование цены "X XXX тг", фильтры, сортировка
+    (function(){
+      function formatTenge(numStr){
+        if(!numStr) return '— тг';
+        const n = Math.max(0, Math.floor(Number(numStr)));
+        return n.toLocaleString('ru-RU') + ' тг';
+      }
+      function enhanceTable(opts){
+        const {tableId, filterId, chkDurId, chkDescId, counterId} = opts;
+        const table = document.getElementById(tableId);
+        if(!table) return;
+        const tbody = table.querySelector('tbody');
+        const rows  = Array.from(tbody.querySelectorAll('tr'));
+        // форматируем цену
+        rows.forEach(tr=>{
+          const cell = tr.querySelector('.price-cell');
+          if(cell){
+            const raw = cell.getAttribute('data-price');
+            cell.textContent = formatTenge(raw);
+          }
+        });
+        const filter = document.getElementById(filterId);
+        const chkDur = document.getElementById(chkDurId);
+        const chkDes = document.getElementById(chkDescId);
+        const counter = document.getElementById(counterId);
+
+        const norm = s => (s||'').toLowerCase().trim();
+
+        function applyFilter(){
+          const q = norm(filter?.value);
+          const needDur = !!(chkDur && chkDur.checked);
+          const needDes = !!(chkDes && chkDes.checked);
+          let visible = 0;
+
+          rows.forEach(tr=>{
+            const nameCell = tr.querySelector('.name-cell');
+            const hasDur = tr.getAttribute('data-hasdur') === '1';
+            const hasDes = tr.getAttribute('data-hasdesc') === '1';
+            const matchText = !q || norm(nameCell?.textContent).includes(q);
+            const matchDur  = !needDur || hasDur;
+            const matchDes  = !needDes || hasDes;
+            const show = matchText && matchDur && matchDes;
+            tr.style.display = show ? '' : 'none';
+            if(show) visible++;
+          });
+          if(counter) counter.textContent = `Показано: ${visible} из ${rows.length}`;
+        }
+        filter && filter.addEventListener('input', applyFilter);
+        chkDur && chkDur.addEventListener('change', applyFilter);
+        chkDes && chkDes.addEventListener('change', applyFilter);
+        applyFilter();
+
+        // сортировка
+        const heads = Array.from(table.tHead.querySelectorAll('th.sortable'));
+        let sortState = {index: -1, dir: 1};
+        heads.forEach((th, idx)=>{
+          th.addEventListener('click', ()=>{
+            const type = th.getAttribute('data-type') || 'text';
+            // сброс активного
+            heads.forEach(h=>h.classList.remove('active'));
+            if(sortState.index === idx){ sortState.dir *= -1; }
+            else { sortState.index = idx; sortState.dir = 1; }
+            th.classList.add('active');
+
+            const collator = new Intl.Collator('ru', {numeric:true, sensitivity:'base'});
+            rows.sort((a,b)=>{
+              const ca = a.children[idx]; const cb = b.children[idx];
+              let va, vb;
+              if(type==='number'){
+                va = Number(ca.getAttribute('data-value') || ca.getAttribute('data-price') || ca.textContent.replace(/[^\d]/g,'')) || 0;
+                vb = Number(cb.getAttribute('data-value') || cb.getAttribute('data-price') || cb.textContent.replace(/[^\d]/g,'')) || 0;
+                return (va - vb) * sortState.dir;
+              }else{
+                va = ca.textContent.trim(); vb = cb.textContent.trim();
+                return collator.compare(va, vb) * sortState.dir;
+              }
+            });
+            // перерисовываем
+            rows.forEach(r=>tbody.appendChild(r));
+          });
+        });
+      }
+
+      enhanceTable({
+        tableId:'table-ski', filterId:'skiFilter', chkDurId:'skiWithDur', chkDescId:'skiWithDesc', counterId:'skiCount'
+      });
+      enhanceTable({
+        tableId:'table-gym', filterId:'gymFilter', chkDurId:'gymWithDur', chkDescId:'gymWithDesc', counterId:'gymCount'
+      });
+    })();
+  </script>
 </body>
 </html>

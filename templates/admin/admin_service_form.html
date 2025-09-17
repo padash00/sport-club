@@ -1,57 +1,186 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ title }} - Админ-панель СК "Вершина"</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='admin_style.css') }}">
-    
+  <meta charset="UTF-8">
+  <title>{{ title }} - Админ-панель СК "Вершина"</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="{{ url_for('static', filename='admin_style.css') }}">
+  <style>
+    /* точечные улучшения только для этой формы */
+    .muted{color:#6c757d;font-size:.9em}
+    .counter{float:right;font-size:.85em;color:#6c757d}
+    .preview-card{
+      margin-top:14px;border:1px solid #dee2e6;border-radius:6px;padding:12px
+    }
+    .preview-title{font-weight:600}
+    .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    .row > *{flex:1 1 220px}
+  </style>
 </head>
 <body>
-    <div class="admin-container">
-        <div class="admin-nav">
-            <a href="{{ url_for('admin_coaches_list') }}">Управление тренерами</a>
-            <a href="{{ url_for('admin_services_list') }}">Управление услугами</a>
-            <a href="{{ url_for('admin_news_list') }}">Управление новостями</a> 
-            <a href="{{ url_for('index') }}" style="float: right;">На главный сайт</a>
+  <div class="admin-container">
+    <nav class="admin-nav" aria-label="Административная навигация">
+      <a href="{{ url_for('admin_coaches_list') }}">Управление тренерами</a>
+      <a href="{{ url_for('admin_services_list') }}" aria-current="page">Управление услугами</a>
+      <a href="{{ url_for('admin_news_list') }}">Управление новостями</a>
+      <a href="{{ url_for('index') }}" style="margin-left:auto;">На главный сайт</a>
+    </nav>
+
+    <h1>{{ title }}</h1>
+
+    {% if error %}
+      <p class="error-message">{{ error }}</p>
+    {% endif %}
+
+    <form id="serviceForm" method="POST" action="{{ form_action }}" novalidate>
+      <div class="form-group">
+        <label for="name">Название услуги <span style="color:#dc3545">*</span>:</label>
+        <span id="nameCount" class="counter" aria-live="polite"></span>
+        <input
+          type="text"
+          id="name"
+          name="name"
+          required
+          maxlength="150"
+          placeholder="Напр.: Прокат лыж комплект / Индивидуальная тренировка"
+          value="{{ service.name if service else '' }}">
+        <small class="muted">До 150 символов. Это попадёт в название в прайс-таблице.</small>
+      </div>
+
+      <div class="row">
+        <div class="form-group">
+          <label for="price">Цена (тг) <span style="color:#dc3545">*</span>:</label>
+          <input
+            type="number"
+            id="price"
+            name="price"
+            inputmode="numeric"
+            step="1"
+            min="0"
+            required
+            placeholder="Напр.: 4500"
+            value="{{ '%.0f'|format(service.price) if service and service.price is not none else '' }}">
+          <small class="muted">Указывайте целое число в тенге (без копеек).</small>
         </div>
 
-        <h1>{{ title }}</h1>
-        
-        {% if error %}
-            <p class="error-message">{{ error }}</p>
-        {% endif %}
+        <div class="form-group">
+          <label for="duration">Длительность (например, 1 час, 1 день):</label>
+          <span id="durCount" class="counter" aria-live="polite"></span>
+          <input
+            type="text"
+            id="duration"
+            name="duration"
+            maxlength="50"
+            placeholder="Напр.: 1 час / 1 день / 8 занятий"
+            value="{{ service.duration if service else '' }}">
+          <small class="muted">До 50 символов. Отображается отдельной колонкой.</small>
+        </div>
+      </div>
 
-        <form method="POST" action="{{ form_action }}">
-            <div class="form-group">
-                <label for="name">Название услуги <span style="color:red;">*</span>:</label>
-                <input type="text" id="name" name="name" required value="{{ service.name if service else '' }}">
-            </div>
-            <div class="form-group">
-                <label for="description">Описание:</label>
-                <textarea id="description" name="description" rows="3">{{ service.description if service else '' }}</textarea>
-            </div>
-            <div class="form-group">
-                <label for="price">Цена (тг) <span style="color:red;">*</span>:</label>
-                <input type="number" id="price" name="price" step="0.01" min="0" required value="{{ service.price if service else '' }}">
-            </div>
-            <div class="form-group">
-                <label for="duration">Длительность (например, 1 час, 1 день):</label>
-                <input type="text" id="duration" name="duration" value="{{ service.duration if service else '' }}">
-            </div>
-            <div class="form-group">
-                <label for="section">Секция <span style="color:red;">*</span>:</label>
-                <select id="section" name="section" required>
-                    <option value="" disabled {% if not service or not service.section %}selected{% endif %}>-- Выберите секцию --</option>
-                    <option value="ski" {% if service and service.section == 'ski' %}selected{% endif %}>Горнолыжная база</option>
-                    <option value="gym" {% if service and service.section == 'gym' %}selected{% endif %}>Тренажерный зал</option>
-                </select>
-            </div>
-            <div class="form-actions">
-                <button type="submit" class="submit-button">{{ 'Сохранить изменения' if service else 'Добавить услугу' }}</button>
-                <a href="{{ url_for('admin_services_list') }}" class="cancel-button">Отмена</a>
-            </div>
-        </form>
-    </div>
+      <div class="form-group">
+        <label for="section">Секция <span style="color:#dc3545">*</span>:</label>
+        <select id="section" name="section" required>
+          <option value="" disabled {% if not service or not service.section %}selected{% endif %}>— Выберите секцию —</option>
+          <option value="ski" {% if service and service.section == 'ski' %}selected{% endif %}>Горнолыжная база</option>
+          <option value="gym" {% if service and service.section == 'gym' %}selected{% endif %}>Тренажерный зал</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="description">Описание:</label>
+        <span id="descCount" class="counter" aria-live="polite"></span>
+        <textarea
+          id="description"
+          name="description"
+          rows="4"
+          maxlength="2000"
+          placeholder="Кратко опишите, что входит в услугу, ограничения и условия.">{{ service.description if service else '' }}</textarea>
+        <small class="muted">До 2000 символов. В прайсе выводится в последней колонке.</small>
+      </div>
+
+      <!-- Мини-превью отображения услуги в таблице цен -->
+      <div class="preview-card" aria-live="polite">
+        <div class="preview-title">Предпросмотр строки в прайс-таблице</div>
+        <div class="muted" id="preview">
+          <strong id="p_name">—</strong> •
+          <span id="p_duration">—</span> •
+          <span id="p_price">— тг</span><br>
+          <span id="p_desc">—</span>
+        </div>
+      </div>
+
+      <div class="form-actions" style="margin-top:14px;">
+        <button type="submit" class="submit-button">
+          {{ 'Сохранить изменения' if service else 'Добавить услугу' }}
+        </button>
+        <a href="{{ url_for('admin_services_list') }}" class="cancel-button">Отмена</a>
+      </div>
+    </form>
+  </div>
+
+  <script>
+    (function(){
+      const form = document.getElementById('serviceForm');
+      const nameI = document.getElementById('name');
+      const priceI = document.getElementById('price');
+      const durI = document.getElementById('duration');
+      const descI = document.getElementById('description');
+
+      const nameC = document.getElementById('nameCount');
+      const durC  = document.getElementById('durCount');
+      const descC = document.getElementById('descCount');
+
+      const pName = document.getElementById('p_name');
+      const pDur  = document.getElementById('p_duration');
+      const pPrice= document.getElementById('p_price');
+      const pDesc = document.getElementById('p_desc');
+
+      function numToTenge(n){
+        if (isNaN(n) || n === '' || n === null) return '— тг';
+        const int = Math.max(0, Math.floor(Number(n)));
+        return int.toLocaleString('ru-RU') + ' тг';
+      }
+      function updCounters(){
+        if (nameI && nameC) nameC.textContent = `${nameI.value.length}/${nameI.maxLength}`;
+        if (durI && durC)   durC.textContent  = `${durI.value.length}/${durI.maxLength}`;
+        if (descI && descC) descC.textContent = `${descI.value.length}/${descI.maxLength}`;
+      }
+      function updPreview(){
+        pName.textContent = nameI.value.trim() || '—';
+        pDur.textContent  = (durI.value.trim() || '—');
+        pPrice.textContent= numToTenge(priceI.value);
+        pDesc.textContent = descI.value.trim() || '—';
+      }
+      ['input','change'].forEach(evt=>{
+        [nameI,priceI,durI,descI].forEach(el=> el && el.addEventListener(evt, ()=>{updCounters();updPreview();}));
+      });
+      // запрет прокруткой менять цену
+      priceI && priceI.addEventListener('wheel', e => {
+        if (document.activeElement === priceI) { priceI.blur(); }
+      });
+
+      // отправка: тримим поля и чистим цену
+      form && form.addEventListener('submit', () => {
+        if (nameI) nameI.value = nameI.value.trim();
+        if (durI)  durI.value  = durI.value.trim();
+        if (descI) descI.value = descI.value.trim();
+
+        if (priceI) {
+          let v = (priceI.value || '').toString().replace(/\s+/g,'').replace(',', '.');
+          let num = Math.floor(Number(v));
+          if (!isFinite(num) || num < 0) num = 0;
+          priceI.value = String(num);
+        }
+      });
+
+      // инициализация
+      updCounters(); updPreview();
+
+      // ctrl/cmd+enter — отправка формы
+      document.addEventListener('keydown', (e)=>{
+        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') form?.submit();
+      });
+    })();
+  </script>
 </body>
 </html>
