@@ -1,10 +1,6 @@
 {
   "version": 2,
-  "functions": {
-    "api/**/*.py": {
-      "runtime": "vercel-python@3.11"
-    }
-  },
+  "functions": { "api/**/*.py": { "runtime": "vercel-python@3.11" } },
   "routes": [
     { "src": "/static/(.*)", "dest": "/static/$1", "headers": { "cache-control": "public, max-age=31536000, immutable" } },
     { "src": "/(.*)", "dest": "/api/index.py" }
