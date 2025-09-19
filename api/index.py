@@ -159,7 +159,6 @@ def health():
 def index():
     return render_template("index.html", title="Главная", latest_news=[])
 
-# ВАЖНО: endpoint совпадает с url_for('ski_resort') в шаблонах
 @app.route("/ski-resort.html", endpoint="ski_resort")
 def ski_resort():
     return render_template(
@@ -168,7 +167,6 @@ def ski_resort():
         coaches=[], services=[]
     )
 
-# ВАЖНО: endpoint совпадает с url_for('gym') в шаблонах
 @app.route("/gym.html", endpoint="gym")
 def gym():
     return render_template(
@@ -188,3 +186,4 @@ def contacts_page():
 @app.route("/thank-you.html")
 def thank_you():
     return "Спасибо!"
+
