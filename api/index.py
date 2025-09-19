@@ -156,9 +156,9 @@ def health():
     return "ok", 200
 
 @app.route("/")
-def home():
-    # временно без БД, чтобы убрать 404
+def index():
     return render_template("index.html", title="Главная", latest_news=[])
+
 
 @app.route("/ski-resort.html")
 def ski_resort_page():
@@ -183,3 +183,4 @@ def contacts_page():
 @app.route("/thank-you.html")
 def thank_you():
     return "Спасибо!"
+
