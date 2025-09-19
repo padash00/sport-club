@@ -64,63 +64,79 @@ app.config['SMTP_PASSWORD'] = env('SMTP_PASSWORD', '')
 app.config['EMAIL_TO']      = env('EMAIL_TO', '')
 
 # ───────────────────── Загрузка изображений ──────────────────────
+# ── Cloudinary / локальные медиа ───────────────────────────────────────────────
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
 
-COACHES_SUB = 'images/coaches'  # относительная папка в /static
-NEWS_SUB    = 'images/news'
+def allowed_file(fname: str) -> bool:
+    return '.' in fname and fname.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-if not IS_SERVERLESS:
-    os.makedirs(os.path.join(app.static_folder, COACHES_SUB), exist_ok=True)
-    os.makedirs(os.path.join(app.static_folder, NEWS_SUB),    exist_ok=True)
-else:
-    print("Serverless: локальное сохранение файлов отключено (read-only).")
-
-# Опциональная интеграция с Cloudinary для продакшена
 CLOUDINARY_URL = env('CLOUDINARY_URL')
 USE_CLOUDINARY = False
 if CLOUDINARY_URL:
     try:
         import cloudinary, cloudinary.uploader  # type: ignore
-        cloudinary.config(cloudinary_url=CLOUDINARY_URL)
+        cloudinary.config(cloudinary_url=CLOUDINARY_URL, secure=True)
         USE_CLOUDINARY = True
         print("Cloudinary enabled.")
     except Exception as e:
         print("Cloudinary init error:", e)
 
-def allowed_file(fname: str) -> bool:
-    return '.' in fname and fname.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
-def save_image(file_storage, rel_subdir: str) -> str | None:
+def store_image(file_storage, rel_subdir: str, cloud_folder: str | None = None):
     """
-    Возвращает ОТНОСИТЕЛЬНЫЙ путь 'images/...', который подставляется в:
-        url_for('static', filename=article.image_path)
-
-    • В проде на Vercel:
-        - если задан CLOUDINARY_URL → грузим в облако и возвращаем его HTTPS-URL
-        - иначе None (сохранение невозможно из-за read-only FS)
-    • Локально: сохраняем в static/<rel_subdir>/ и возвращаем относительный путь.
+    Возвращает dict:
+      {"url": <https-url или относительный 'images/...'>, "id": <cloudinary public_id|None>}
+    На Vercel без CLOUDINARY_URL вернёт None (read-only FS).
     """
     if not file_storage or file_storage.filename == '' or not allowed_file(file_storage.filename):
         return None
 
+    # Прод: Cloudinary
     if USE_CLOUDINARY:
         try:
-            res = cloudinary.uploader.upload(file_storage, folder=f"vershina/{rel_subdir}")  # type: ignore
-            return res.get('secure_url')
+            folder = f"vershina/{(cloud_folder or rel_subdir).strip('/')}"
+            res = cloudinary.uploader.upload(
+                file_storage,
+                folder=folder,
+                resource_type="image",
+                unique_filename=True,
+                overwrite=False,
+            )
+            return {"url": res.get("secure_url"), "id": res.get("public_id")}
         except Exception as e:  # noqa: BLE001
             print("Cloudinary upload error:", e)
             return None
 
+    # Серверлес без облака — нельзя сохранить
     if IS_SERVERLESS:
         print(f"Uploads disabled on serverless without CLOUDINARY_URL (file={file_storage.filename})")
         return None
 
-    # Локальная разработка
+    # Локальная разработка: сохраняем в /static/<rel_subdir>/
+    from werkzeug.utils import secure_filename
     fname = secure_filename(file_storage.filename)
     local_dir = os.path.join(app.static_folder, rel_subdir)
     os.makedirs(local_dir, exist_ok=True)
     file_storage.save(os.path.join(local_dir, fname))
-    return f"{rel_subdir}/{fname}"
+    return {"url": f"{rel_subdir}/{fname}", "id": None}
+
+def delete_image(public_id: str | None):
+    """Удалить файл из Cloudinary (если храните public_id в БД)."""
+    if USE_CLOUDINARY and public_id:
+        try:
+            cloudinary.uploader.destroy(public_id, invalidate=True, resource_type="image")  # type: ignore
+        except Exception as e:  # noqa: BLE001
+            print("Cloudinary delete error:", e)
+
+def media_url(path: str | None) -> str:
+    """Вернуть корректный src для <img>: http(s) или /static/..."""
+    if not path:
+        return ""
+    return path if path.startswith("http") else url_for('static', filename=path)
+
+# чтобы использовать прямо в шаблоне: {{ media_url(obj.image_path) }}
+@app.context_processor
+def inject_media_helpers():
+    return {"media_url": media_url}
 
 # ─────────────────────────── Модели ──────────────────────────────
 class Coach(db.Model):
@@ -489,3 +505,4 @@ def admin_delete_news(article_id: int):
 # ─────────────────────────── Локальный запуск ───────────────────
 if __name__ == "__main__":
     app.run(debug=True)
+
