@@ -148,3 +148,38 @@ def add_security_headers(resp):
     resp.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
     resp.headers['Permissions-Policy'] = 'geolocation=(), microphone=()'
     return resp
+
+# --- sanity routes (добавь в самый низ файла) ---
+
+@app.get("/health")
+def health():
+    return "ok", 200
+
+@app.route("/")
+def home():
+    # временно без БД, чтобы убрать 404
+    return render_template("index.html", title="Главная", latest_news=[])
+
+@app.route("/ski-resort.html")
+def ski_resort_page():
+    return render_template("ski-resort.html",
+                           title="Горнолыжная база",
+                           coaches=[], services=[])
+
+@app.route("/gym.html")
+def gym_page():
+    return render_template("gym.html",
+                           title="Тренажерный и батутный зал",
+                           coaches=[], services=[])
+
+@app.route("/news")
+def news_list_all():
+    return render_template("news_list_all.html", title="Все новости и акции", articles=[])
+
+@app.route("/contacts.html")
+def contacts_page():
+    return render_template("contacts.html", title="Контакты")
+
+@app.route("/thank-you.html")
+def thank_you():
+    return "Спасибо!"
