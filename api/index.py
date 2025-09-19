@@ -9,7 +9,7 @@ from email.header import Header
 from flask import Flask, render_template, request, redirect, url_for, Response
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.utils import secure_filename
-
+from flask import request, redirect, url_for
 # ── Пути проекта ───────────────────────────────────────────────────────────────
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 ROOT_DIR = os.path.abspath(os.path.join(BASE_DIR, '..'))
@@ -186,4 +186,60 @@ def contacts_page():
 @app.route("/thank-you.html")
 def thank_you():
     return "Спасибо!"
+
+@app.post("/submit")
+def submit_form():  # для модального окна записи в ski/gym
+    name = request.form.get("userName")
+    phone = request.form.get("userPhone")
+    print(f"[FORM] Заявка: {name=} {phone=}")
+    return redirect(url_for("thank_you"))
+
+@app.post("/submit-contact")
+def submit_contact_form():  # форма на /contacts.html
+    name = request.form.get('contact_name')
+    email_from_user = request.form.get('contact_email')
+    subject_from_user = request.form.get('contact_subject', 'Без темы')
+    message_text = request.form.get('contact_message')
+
+    # Если SMTP-переменные заданы — пробуем отправить письмо
+    try:
+        smtp_server = app.config.get('SMTP_SERVER')
+        smtp_port   = app.config.get('SMTP_PORT')
+        smtp_user   = app.config.get('SMTP_USERNAME')
+        smtp_pass   = app.config.get('SMTP_PASSWORD')
+        email_to    = app.config.get('EMAIL_TO')
+
+        if all([smtp_server, smtp_port, smtp_user, smtp_pass, email_to]):
+            import smtplib
+            from email.mime.text import MIMEText
+            from email.header import Header
+
+            body = f"""
+            <html><body>
+                <h2>Сообщение с сайта</h2>
+                <p><b>От:</b> {name} ({email_from_user})</p>
+                <p><b>Тема:</b> {subject_from_user}</p>
+                <hr>
+                <pre style="white-space:pre-wrap;">{message_text}</pre>
+            </body></html>
+            """
+            msg = MIMEText(body, 'html', 'utf-8')
+            msg['From'] = smtp_user
+            msg['To'] = email_to
+            msg['Subject'] = Header(f"Сообщение с сайта: {subject_from_user}", 'utf-8')
+            if email_from_user:
+                msg.add_header('Reply-To', email_from_user)
+
+            server = smtplib.SMTP(smtp_server, int(smtp_port))
+            server.ehlo(); server.starttls(); server.ehlo()
+            server.login(smtp_user, smtp_pass)
+            server.sendmail(smtp_user, email_to, msg.as_string())
+            server.quit()
+            print("[CONTACT] письмо отправлено")
+        else:
+            print("[CONTACT] SMTP не настроен — пропускаем отправку")
+    except Exception as e:
+        print(f"[CONTACT] ошибка отправки письма: {e}")
+
+    return redirect(url_for("thank_you"))
 
