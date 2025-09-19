@@ -6,10 +6,7 @@ from email.mime.text import MIMEText
 from email.header import Header
 import smtplib
 
-from flask import (
-    Flask, render_template, request, redirect, url_for,
-    Response, abort
-)
+from flask import Flask, render_template, request, redirect, url_for, Response
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.utils import secure_filename
 
@@ -23,7 +20,7 @@ app = Flask(
     static_folder=os.path.join(ROOT_DIR, 'static'),
 )
 
-def env(key: str, default=None):
+def env(key: str, default=None) -> str | None:
     return os.environ.get(key, default)
 
 # ────────────────── Флаги окружения / безопасность ───────────────
@@ -31,11 +28,11 @@ IS_SERVERLESS = bool(env('VERCEL') or env('NOW_REGION') or env('AWS_LAMBDA_FUNCT
 app.secret_key = env('SECRET_KEY') or os.urandom(32)
 
 ADMIN_USER = env('ADMIN_USER', 'admin')
-ADMIN_PASS = env('ADMIN_PASS')  # задайте в Vercel → Settings → Environment Variables
+ADMIN_PASS = env('ADMIN_PASS')  # установи в Vercel → Project → Settings → Environment Variables
 
 def _need_auth():
     return Response("Требуется авторизация", 401,
-                    {"WWW-Authenticate": 'Basic realm="Admin"'})
+                    {"WWW-Authenticate": 'Basic realm=\"Admin\"'})
 
 def requires_admin(fn):
     @wraps(fn)
@@ -48,14 +45,15 @@ def requires_admin(fn):
 # ────────────────────────── База данных ──────────────────────────
 db_url = env('DATABASE_URL')
 if db_url and db_url.startswith('postgres://'):
-    # совместимость с url-провайдерами
     db_url = db_url.replace('postgres://', 'postgresql://', 1)
 if not db_url:
-    # локальная разработка
-    db_url = 'sqlite:///' + os.path.join(ROOT_DIR, 'sportclub.db')
+    db_url = 'sqlite:///' + os.path.join(ROOT_DIR, 'sportclub.db')  # локальная разработка
 
 app.config['SQLALCHEMY_DATABASE_URI'] = db_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+# чуть устойчивее коннекты в бессерверной среде
+app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {"pool_pre_ping": True}
+
 db = SQLAlchemy(app)
 
 # ───────────────────── SMTP (контакты на сайте) ──────────────────
@@ -68,41 +66,60 @@ app.config['EMAIL_TO']      = env('EMAIL_TO', '')
 # ───────────────────── Загрузка изображений ──────────────────────
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
 
-# относительные подпапки внутри /static
-COACHES_SUB = 'images/coaches'
+COACHES_SUB = 'images/coaches'  # относительная папка в /static
 NEWS_SUB    = 'images/news'
 
-UPLOAD_COACHES = os.path.join(app.static_folder, COACHES_SUB)
-UPLOAD_NEWS    = os.path.join(app.static_folder, NEWS_SUB)
-
-# локально создаём папки; на Vercel — пропускаем (read-only)
 if not IS_SERVERLESS:
-    os.makedirs(UPLOAD_COACHES, exist_ok=True)
-    os.makedirs(UPLOAD_NEWS,    exist_ok=True)
+    os.makedirs(os.path.join(app.static_folder, COACHES_SUB), exist_ok=True)
+    os.makedirs(os.path.join(app.static_folder, NEWS_SUB),    exist_ok=True)
 else:
-    print("Serverless: skip creating static/ directories; uploads disabled in prod.")
+    print("Serverless: локальное сохранение файлов отключено (read-only).")
+
+# Опциональная интеграция с Cloudinary для продакшена
+CLOUDINARY_URL = env('CLOUDINARY_URL')
+USE_CLOUDINARY = False
+if CLOUDINARY_URL:
+    try:
+        import cloudinary, cloudinary.uploader  # type: ignore
+        cloudinary.config(cloudinary_url=CLOUDINARY_URL)
+        USE_CLOUDINARY = True
+        print("Cloudinary enabled.")
+    except Exception as e:
+        print("Cloudinary init error:", e)
 
 def allowed_file(fname: str) -> bool:
     return '.' in fname and fname.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 def save_image(file_storage, rel_subdir: str) -> str | None:
     """
-    Сохраняет файл локально в static/<rel_subdir>/ и возвращает ОТНОСИТЕЛЬНЫЙ путь
-    вида 'images/...', который ваши шаблоны подставляют в url_for('static', filename=...).
+    Возвращает ОТНОСИТЕЛЬНЫЙ путь 'images/...', который подставляется в:
+        url_for('static', filename=article.image_path)
 
-    На Vercel (serverless) ничего не делает и возвращает None.
+    • В проде на Vercel:
+        - если задан CLOUDINARY_URL → грузим в облако и возвращаем его HTTPS-URL
+        - иначе None (сохранение невозможно из-за read-only FS)
+    • Локально: сохраняем в static/<rel_subdir>/ и возвращаем относительный путь.
     """
     if not file_storage or file_storage.filename == '' or not allowed_file(file_storage.filename):
         return None
+
+    if USE_CLOUDINARY:
+        try:
+            res = cloudinary.uploader.upload(file_storage, folder=f"vershina/{rel_subdir}")  # type: ignore
+            return res.get('secure_url')
+        except Exception as e:  # noqa: BLE001
+            print("Cloudinary upload error:", e)
+            return None
+
     if IS_SERVERLESS:
-        print(f"Uploads disabled on serverless: attempted to save {file_storage.filename}")
+        print(f"Uploads disabled on serverless without CLOUDINARY_URL (file={file_storage.filename})")
         return None
 
+    # Локальная разработка
     fname = secure_filename(file_storage.filename)
     local_dir = os.path.join(app.static_folder, rel_subdir)
     os.makedirs(local_dir, exist_ok=True)
     file_storage.save(os.path.join(local_dir, fname))
-    # КЛЮЧЕВОЕ: возвращаем относительный путь без /static/
     return f"{rel_subdir}/{fname}"
 
 # ─────────────────────────── Модели ──────────────────────────────
@@ -115,33 +132,33 @@ class Coach(db.Model):
     section = db.Column(db.String(50), nullable=False)  # 'ski' | 'gym'
 
     def __repr__(self):
-        return f'<Coach {self.name}>'
+        return f"<Coach {self.name}>"
 
 class Service(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(150), nullable=False)
     description = db.Column(db.Text)
-    price = db.Column(db.Float, nullable=False)
+    price = db.Column(db.Float, nullable=False)  # если нужен cent-точный учёт — поменяй на Numeric(10,2)
     duration = db.Column(db.String(50))
     section = db.Column(db.String(50), nullable=False)  # 'ski' | 'gym'
 
     def __repr__(self):
-        return f'<Service {self.name}>'
+        return f"<Service {self.name}>"
 
 class NewsArticle(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(200), nullable=False)
     content = db.Column(db.Text, nullable=False)
     pub_date = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
-    image_path = db.Column(db.String(300))
+    image_path = db.Column(db.String(300))  # может быть относительным путём или HTTPS-URL (Cloudinary)
 
     def __repr__(self):
-        return f'<NewsArticle {self.title}>'
+        return f"<NewsArticle {self.title}>"
 
 with app.app_context():
     try:
         db.create_all()
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         print("DB init skipped/failed:", e)
 
 # ───────────────────── Security заголовки ────────────────────────
@@ -185,7 +202,7 @@ def news_list_all():
     return render_template("news_list_all.html", title="Все новости и акции", articles=articles)
 
 @app.route('/news/<int:article_id>')
-def news_article_detail(article_id):
+def news_article_detail(article_id: int):
     article = NewsArticle.query.get_or_404(article_id)
     return render_template('news_article_detail.html', article=article, title=article.title)
 
@@ -244,7 +261,7 @@ def submit_contact_form():
             print("[CONTACT] письмо отправлено")
         else:
             print("[CONTACT] SMTP не настроен — пропускаем отправку")
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         print(f"[CONTACT] ошибка отправки письма: {e}")
 
     return redirect(url_for("thank_you"))
@@ -253,7 +270,6 @@ def submit_contact_form():
 @app.route("/admin")
 @requires_admin
 def admin_root():
-    # можно сделать меню; для простоты — на тренеров
     return redirect(url_for("admin_coaches_list"))
 
 # --- Тренеры ---
@@ -273,22 +289,27 @@ def admin_add_coach():
         specialization = request.form.get('specialization')
         section = request.form.get('section')
         photo_rel = save_image(request.files.get('photo_file'), COACHES_SUB)
+
         if not name or not section:
             return render_template('admin/admin_coach_form.html',
                                    title="Ошибка: Заполните поля",
                                    form_action=url_for('admin_add_coach'),
                                    error="Имя и секция обязательны.")
-        new_coach = Coach(name=name, experience=experience, specialization=specialization,
-                          section=section, photo_path=photo_rel or None)
-        db.session.add(new_coach); db.session.commit()
+
+        db.session.add(Coach(
+            name=name, experience=experience, specialization=specialization,
+            section=section, photo_path=photo_rel or None
+        ))
+        db.session.commit()
         return redirect(url_for('admin_coaches_list'))
+
     return render_template('admin/admin_coach_form.html',
                            title="Добавить нового тренера",
                            form_action=url_for('admin_add_coach'))
 
 @app.route('/admin/coaches/edit/<int:coach_id>', methods=['GET', 'POST'])
 @requires_admin
-def admin_edit_coach(coach_id):
+def admin_edit_coach(coach_id: int):
     coach = Coach.query.get_or_404(coach_id)
     if request.method == 'POST':
         coach.name = request.form.get('name')
@@ -300,6 +321,7 @@ def admin_edit_coach(coach_id):
             coach.photo_path = new_photo
         db.session.commit()
         return redirect(url_for('admin_coaches_list'))
+
     return render_template('admin/admin_coach_form.html',
                            title="Редактировать тренера",
                            form_action=url_for('admin_edit_coach', coach_id=coach_id),
@@ -307,9 +329,10 @@ def admin_edit_coach(coach_id):
 
 @app.post('/admin/coaches/delete/<int:coach_id>')
 @requires_admin
-def admin_delete_coach(coach_id):
+def admin_delete_coach(coach_id: int):
     coach = Coach.query.get_or_404(coach_id)
-    db.session.delete(coach); db.session.commit()
+    db.session.delete(coach)
+    db.session.commit()
     return redirect(url_for('admin_coaches_list'))
 
 # --- Услуги ---
@@ -331,6 +354,7 @@ def admin_add_service():
         price_str = request.form.get('price')
         duration = request.form.get('duration')
         section = request.form.get('section')
+
         if not name or not price_str or not section:
             return render_template('admin/admin_service_form.html',
                                    title="Ошибка: Заполните все обязательные поля",
@@ -338,23 +362,28 @@ def admin_add_service():
                                    error="Название, цена и секция обязательны.")
         try:
             price = float(price_str)
-            if price < 0: raise ValueError("Цена не может быть отрицательной")
+            if price < 0:
+                raise ValueError("Цена не может быть отрицательной")
         except ValueError as e:
             return render_template('admin/admin_service_form.html',
                                    title="Ошибка: Некорректная цена",
                                    form_action=url_for('admin_add_service'),
                                    error=f"Цена должна быть положительным числом. {e}")
-        db.session.add(Service(name=name, description=description, price=price,
-                               duration=duration, section=section))
+
+        db.session.add(Service(
+            name=name, description=description, price=price,
+            duration=duration, section=section
+        ))
         db.session.commit()
         return redirect(url_for('admin_services_list'))
+
     return render_template('admin/admin_service_form.html',
                            title="Добавить новую услугу",
                            form_action=url_for('admin_add_service'))
 
 @app.route('/admin/services/edit/<int:service_id>', methods=['GET', 'POST'])
 @requires_admin
-def admin_edit_service(service_id):
+def admin_edit_service(service_id: int):
     service = Service.query.get_or_404(service_id)
     if request.method == 'POST':
         service.name = request.form.get('name')
@@ -362,6 +391,7 @@ def admin_edit_service(service_id):
         price_str = request.form.get('price')
         service.duration = request.form.get('duration')
         service.section = request.form.get('section')
+
         if not service.name or not price_str or not service.section:
             return render_template('admin/admin_service_form.html',
                                    title="Ошибка: Заполните все обязательные поля",
@@ -370,15 +400,18 @@ def admin_edit_service(service_id):
                                    error="Название, цена и секция обязательны.")
         try:
             service.price = float(price_str)
-            if service.price < 0: raise ValueError("Цена не может быть отрицательной")
+            if service.price < 0:
+                raise ValueError("Цена не может быть отрицательной")
         except ValueError as e:
             return render_template('admin/admin_service_form.html',
                                    title="Ошибка: Некорректная цена",
                                    form_action=url_for('admin_edit_service', service_id=service_id),
                                    service=service,
                                    error=f"Цена должна быть положительным числом. {e}")
+
         db.session.commit()
         return redirect(url_for('admin_services_list'))
+
     return render_template('admin/admin_service_form.html',
                            title="Редактировать услугу",
                            form_action=url_for('admin_edit_service', service_id=service_id),
@@ -386,9 +419,10 @@ def admin_edit_service(service_id):
 
 @app.post('/admin/services/delete/<int:service_id>')
 @requires_admin
-def admin_delete_service(service_id):
+def admin_delete_service(service_id: int):
     service = Service.query.get_or_404(service_id)
-    db.session.delete(service); db.session.commit()
+    db.session.delete(service)
+    db.session.commit()
     return redirect(url_for('admin_services_list'))
 
 # --- Новости ---
@@ -415,13 +449,14 @@ def admin_add_news():
                                    image_path=img_rel or None))
         db.session.commit()
         return redirect(url_for('admin_news_list'))
+
     return render_template('admin/admin_news_form.html',
                            title="Добавить новость",
                            form_action=url_for('admin_add_news'))
 
 @app.route('/admin/news/edit/<int:article_id>', methods=['GET', 'POST'])
 @requires_admin
-def admin_edit_news(article_id):
+def admin_edit_news(article_id: int):
     article = NewsArticle.query.get_or_404(article_id)
     if request.method == 'POST':
         article.title = request.form.get('title')
@@ -437,6 +472,7 @@ def admin_edit_news(article_id):
                                    error="Заголовок и текст новости обязательны.")
         db.session.commit()
         return redirect(url_for('admin_news_list'))
+
     return render_template('admin/admin_news_form.html',
                            title="Редактировать новость",
                            form_action=url_for('admin_edit_news', article_id=article_id),
@@ -444,9 +480,10 @@ def admin_edit_news(article_id):
 
 @app.post('/admin/news/delete/<int:article_id>')
 @requires_admin
-def admin_delete_news(article_id):
+def admin_delete_news(article_id: int):
     article = NewsArticle.query.get_or_404(article_id)
-    db.session.delete(article); db.session.commit()
+    db.session.delete(article)
+    db.session.commit()
     return redirect(url_for('admin_news_list'))
 
 # ─────────────────────────── Локальный запуск ───────────────────
