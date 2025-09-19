@@ -149,7 +149,7 @@ def add_security_headers(resp):
     resp.headers['Permissions-Policy'] = 'geolocation=(), microphone=()'
     return resp
 
-# --- sanity routes (добавь в самый низ файла) ---
+# --- sanity routes (низ файла) ---
 
 @app.get("/health")
 def health():
@@ -159,18 +159,23 @@ def health():
 def index():
     return render_template("index.html", title="Главная", latest_news=[])
 
+# ВАЖНО: endpoint совпадает с url_for('ski_resort') в шаблонах
+@app.route("/ski-resort.html", endpoint="ski_resort")
+def ski_resort():
+    return render_template(
+        "ski-resort.html",
+        title="Горнолыжная база",
+        coaches=[], services=[]
+    )
 
-@app.route("/ski-resort.html")
-def ski_resort_page():
-    return render_template("ski-resort.html",
-                           title="Горнолыжная база",
-                           coaches=[], services=[])
-
-@app.route("/gym.html")
-def gym_page():
-    return render_template("gym.html",
-                           title="Тренажерный и батутный зал",
-                           coaches=[], services=[])
+# ВАЖНО: endpoint совпадает с url_for('gym') в шаблонах
+@app.route("/gym.html", endpoint="gym")
+def gym():
+    return render_template(
+        "gym.html",
+        title="Тренажерный и батутный зал",
+        coaches=[], services=[]
+    )
 
 @app.route("/news")
 def news_list_all():
@@ -183,4 +188,3 @@ def contacts_page():
 @app.route("/thank-you.html")
 def thank_you():
     return "Спасибо!"
-
