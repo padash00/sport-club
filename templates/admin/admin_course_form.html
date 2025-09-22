@@ -1,23 +1,120 @@
-<form method="POST" action="{{ form_action }}">
-  <div class="form-group">
-    <label for="title">Название курса:</label>
-    <input type="text" id="title" name="title" required maxlength="150" value="{{ course.title if course else '' }}">
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>{{ title }} - Админ-панель СК "Вершина"</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="{{ url_for('static', filename='admin_style.css') }}">
+  <style>
+    /* только мелкие улучшения для этой формы */
+    .muted{color:#6c757d;font-size:.9em}
+    .counter{float:right;font-size:.85em;color:#6c757d}
+    .preview{margin-top:10px}
+    .yt-preview{aspect-ratio:16/9; width:min(560px,100%); border:1px solid #dee2e6; border-radius:8px}
+  </style>
+</head>
+<body>
+  <div class="admin-container">
+    <nav class="admin-nav" aria-label="Административная навигация">
+      <a href="{{ url_for('admin_courses_list') }}" aria-current="page">Управление курсами</a>
+      <a href="{{ url_for('admin_coaches_list') }}">Управление тренерами</a>
+      <a href="{{ url_for('admin_services_list') }}">Управление услугами</a>
+      <a href="{{ url_for('admin_news_list') }}">Управление новостями</a>
+      <a href="{{ url_for('index') }}" style="margin-left:auto;">На главный сайт</a>
+    </nav>
+
+    <h1>{{ title }}</h1>
+
+    {% if error %}
+      <p class="error-message">{{ error }}</p>
+    {% endif %}
+
+    <form method="POST" action="{{ form_action }}" novalidate>
+      <div class="form-group">
+        <label for="title">Название курса <span style="color:#dc3545">*</span>:</label>
+        <span class="counter" id="tCounter" aria-live="polite"></span>
+        <input
+          type="text"
+          id="title"
+          name="title"
+          required
+          maxlength="150"
+          placeholder="Например: Базовый курс по карвингу"
+          value="{{ course.title|e if course else '' }}">
+        <small class="muted">До 150 символов. Показывается в списке и на странице курсов.</small>
+      </div>
+
+      <div class="form-group">
+        <label for="youtube_id">YouTube ID <span style="color:#dc3545">*</span>:</label>
+        <input
+          type="text"
+          id="youtube_id"
+          name="youtube_id"
+          required
+          maxlength="50"
+          placeholder="Например: dQw4w9WgXcQ"
+          value="{{ course.youtube_id|e if course else '' }}">
+        <small class="muted">Вставляй только ID ролика (то, что после <code>v=</code> в ссылке).</small>
+
+        <!-- предпросмотр видео -->
+        <div class="preview" id="ytBox" style="display:none;">
+          <iframe id="ytFrame" class="yt-preview" allowfullscreen loading="lazy"></iframe>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="description">Описание:</label>
+        <span class="counter" id="dCounter" aria-live="polite"></span>
+        <textarea
+          id="description"
+          name="description"
+          rows="5"
+          maxlength="500"
+          placeholder="Коротко опиши, что в курсе и для кого он.">{{ course.description|e if course else '' }}</textarea>
+      </div>
+
+      <div class="form-actions">
+        <button type="submit" class="submit-button">
+          {{ 'Сохранить изменения' if course else 'Добавить курс' }}
+        </button>
+        <a href="{{ url_for('admin_courses_list') }}" class="cancel-button">Отмена</a>
+      </div>
+    </form>
   </div>
 
-  <div class="form-group">
-    <label for="youtube_id">YouTube ID:</label>
-    <input type="text" id="youtube_id" name="youtube_id" required maxlength="50"
-           placeholder="Напр.: dQw4w9WgXcQ"
-           value="{{ course.youtube_id if course else '' }}">
-    <small>Вставляй только ID ролика (после `v=` в ссылке).</small>
-  </div>
+  <script>
+    // счётчики и предпросмотр youtube
+    (function(){
+      const t = document.getElementById('title');
+      const d = document.getElementById('description');
+      const yt = document.getElementById('youtube_id');
+      const tC = document.getElementById('tCounter');
+      const dC = document.getElementById('dCounter');
+      const box = document.getElementById('ytBox');
+      const frame = document.getElementById('ytFrame');
 
-  <div class="form-group">
-    <label for="description">Описание:</label>
-    <textarea id="description" name="description" rows="4" maxlength="500">{{ course.description if course else '' }}</textarea>
-  </div>
+      function updCounters(){
+        if (t && tC) tC.textContent = `${t.value.length}/${t.maxLength}`;
+        if (d && dC) dC.textContent = `${d.value.length}/${d.maxLength}`;
+      }
+      function updPreview(){
+        const id = (yt.value || '').trim();
+        if (/^[\w-]{6,}$/.test(id)){
+          frame.src = `https://www.youtube.com/embed/${id}`;
+          box.style.display = '';
+        } else {
+          frame.removeAttribute('src');
+          box.style.display = 'none';
+        }
+      }
 
-  <button type="submit" class="submit-button">
-    {{ 'Сохранить изменения' if course else 'Добавить курс' }}
-  </button>
-</form>
+      ['input','change'].forEach(evt=>{
+        t && t.addEventListener(evt, updCounters);
+        d && d.addEventListener(evt, updCounters);
+        yt && yt.addEventListener(evt, updPreview);
+      });
+      updCounters(); updPreview();
+    })();
+  </script>
+</body>
+</html>
