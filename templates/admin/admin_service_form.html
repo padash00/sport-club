@@ -72,7 +72,7 @@
             name="duration"
             maxlength="50"
             placeholder="Напр.: 1 час / 1 день / 8 занятий"
-            value="{{ service.duration if service else '' }}">
+            value="{{ service.duration|e if service else '' }}">
           <small class="muted">До 50 символов. Отображается отдельной колонкой.</small>
         </div>
       </div>
@@ -184,4 +184,5 @@
   </script>
 </body>
 </html>
+
 
