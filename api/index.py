@@ -7,10 +7,11 @@ from email.header import Header
 import smtplib
 
 from flask import Flask, render_template, request, redirect, url_for, Response
-from flask_sqlalchemy import SQLAlchemy
+# импорт SQLAlchemy оставлен, хотя экземпляр берём из api.models (не создаём новый!)
+from flask_sqlalchemy import SQLAlchemy  # noqa: F401
 from werkzeug.utils import secure_filename
 
-# ВАЖНО: используем единый db из models.py
+# ЕДИНЫЙ db + модель Course живут в api/models.py
 from api.models import db, Course
 
 # ───────────────────────── Папки проекта ─────────────────────────
@@ -35,7 +36,7 @@ ADMIN_PASS = env('ADMIN_PASS')  # установи в Vercel → Project → Set
 
 def _need_auth():
     return Response("Требуется авторизация", 401,
-                    {"WWW-Authenticate": 'Basic realm=\"Admin\"'})
+                    {"WWW-Authenticate": 'Basic realm="Admin"'})
 
 def requires_admin(fn):
     @wraps(fn)
@@ -88,9 +89,13 @@ if CLOUDINARY_URL:
         USE_CLOUDINARY = False
 
 def store_image(file_storage, rel_subdir: str, cloud_folder: str | None = None):
+    """
+    Возвращает dict {"url": <путь/https>, "id": <public_id|None>} или None.
+    """
     if not file_storage or file_storage.filename == "" or not allowed_file(file_storage.filename):
         return None
 
+    # Прод: Cloudinary
     if USE_CLOUDINARY:
         try:
             folder = f"vershina/{(cloud_folder or rel_subdir).strip('/')}"
@@ -106,10 +111,12 @@ def store_image(file_storage, rel_subdir: str, cloud_folder: str | None = None):
             print("Cloudinary upload error:", e)
             return None
 
+    # Серверлес без облака — сохранить нельзя
     if IS_SERVERLESS:
         print(f"Uploads disabled on serverless without CLOUDINARY_URL (file={file_storage.filename})")
         return None
 
+    # Локально: сохраняем в static/
     fname = secure_filename(file_storage.filename)
     local_dir = os.path.join(app.static_folder, rel_subdir)
     os.makedirs(local_dir, exist_ok=True)
@@ -231,6 +238,58 @@ def courses():
     items = Course.query.order_by(Course.id.desc()).all()
     return render_template("courses.html", title="Видеокурсы", courses=items)
 
+# ───────────── Формы с сайта (нужны шаблонам!) ─────────────
+@app.route("/submit", methods=["POST"])
+def submit_form():
+    name = request.form.get("userName")
+    phone = request.form.get("userPhone")
+    print(f"[FORM] Заявка: name={name!r} phone={phone!r}")
+    return redirect(url_for("thank_you"))
+
+@app.route("/submit-contact", methods=["POST"])
+def submit_contact_form():
+    name = request.form.get('contact_name')
+    email_from_user = request.form.get('contact_email')
+    subject_from_user = request.form.get('contact_subject', 'Без темы')
+    message_text = request.form.get('contact_message')
+
+    try:
+        smtp_server = app.config['SMTP_SERVER']
+        smtp_port   = int(app.config['SMTP_PORT'])
+        smtp_user   = app.config['SMTP_USERNAME']
+        smtp_pass   = app.config['SMTP_PASSWORD']
+        email_to    = app.config['EMAIL_TO']
+
+        if all([smtp_server, smtp_port, smtp_user, smtp_pass, email_to]):
+            body = f"""
+            <html><body>
+                <h2>Сообщение с сайта СК "Вершина"</h2>
+                <p><b>От:</b> {name} ({email_from_user})</p>
+                <p><b>Тема:</b> {subject_from_user}</p>
+                <hr>
+                <pre style="white-space:pre-wrap;">{message_text}</pre>
+            </body></html>
+            """
+            msg = MIMEText(body, 'html', 'utf-8')
+            msg['From'] = smtp_user
+            msg['To'] = email_to
+            msg['Subject'] = Header(f"Сообщение с сайта: {subject_from_user}", 'utf-8')
+            if email_from_user:
+                msg.add_header('Reply-To', email_from_user)
+
+            server = smtplib.SMTP(smtp_server, smtp_port)
+            server.ehlo(); server.starttls(); server.ehlo()
+            server.login(smtp_user, smtp_pass)
+            server.sendmail(smtp_user, email_to, msg.as_string())
+            server.quit()
+            print("[CONTACT] письмо отправлено")
+        else:
+            print("[CONTACT] SMTP не настроен — пропускаем отправку")
+    except Exception as e:  # noqa: BLE001
+        print(f"[CONTACT] ошибка отправки письма: {e}")
+
+    return redirect(url_for("thank_you"))
+
 # ───────────────────────── Админ-панель ──────────────────────────
 @app.route("/admin")
 @requires_admin
@@ -291,7 +350,7 @@ def admin_edit_course(course_id):
                            course=course,
                            form_action=url_for("admin_edit_course", course_id=course.id))
 
-@app.post("/admin/courses/delete/<int:course_id>")
+@app.route("/admin/courses/delete/<int:course_id>", methods=["POST"])
 @requires_admin
 def admin_delete_course(course_id):
     course = Course.query.get_or_404(course_id)
@@ -358,7 +417,7 @@ def admin_edit_coach(coach_id: int):
                            form_action=url_for('admin_edit_coach', coach_id=coach_id),
                            coach=coach)
 
-@app.post('/admin/coaches/delete/<int:coach_id>')
+@app.route('/admin/coaches/delete/<int:coach_id>', methods=['POST'])
 @requires_admin
 def admin_delete_coach(coach_id: int):
     coach = Coach.query.get_or_404(coach_id)
@@ -448,7 +507,7 @@ def admin_edit_service(service_id: int):
                            form_action=url_for('admin_edit_service', service_id=service_id),
                            service=service)
 
-@app.post('/admin/services/delete/<int:service_id>')
+@app.route('/admin/services/delete/<int:service_id>', methods=['POST'])
 @requires_admin
 def admin_delete_service(service_id: int):
     service = Service.query.get_or_404(service_id)
@@ -513,7 +572,7 @@ def admin_edit_news(article_id: int):
                            form_action=url_for('admin_edit_news', article_id=article_id),
                            article=article)
 
-@app.post('/admin/news/delete/<int:article_id>')
+@app.route('/admin/news/delete/<int:article_id>', methods=['POST'])
 @requires_admin
 def admin_delete_news(article_id: int):
     article = NewsArticle.query.get_or_404(article_id)
