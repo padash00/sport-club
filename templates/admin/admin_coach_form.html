@@ -39,7 +39,8 @@
           rows="6"
           maxlength="2000"
           placeholder="— 10 лет инструкторской практики&#10;— Сертификат ISIA Level 2&#10;— Курсы первой помощи">
-{{ coach.experience if coach else '' }}</textarea>
+{{ coach.experience|e if coach else '' }}
+</textarea>
         <small>Подсказка: перенос строки = новый пункт, на сайте мы отобразим их построчно.</small>
       </div>
 
@@ -99,5 +100,6 @@
   </div>
 </body>
 </html>
+
 
 
