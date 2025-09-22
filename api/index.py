@@ -250,6 +250,50 @@ def contacts_page():
 def thank_you():
     return "Спасибо!"
 
+@app.route("/courses")
+def courses():
+    courses = Course.query.all()
+    return render_template("courses.html", title="Видеокурсы", courses=courses)
+
+
+@app.route("/admin/courses")
+def admin_courses_list():
+    courses = Course.query.all()
+    return render_template("admin/admin_courses_list.html", title="Управление курсами", courses=courses)
+
+@app.route("/admin/courses/add", methods=["GET", "POST"])
+def admin_add_course():
+    if request.method == "POST":
+        title = request.form["title"]
+        youtube_id = request.form["youtube_id"]
+        description = request.form.get("description")
+
+        course = Course(title=title, youtube_id=youtube_id, description=description)
+        db.session.add(course)
+        db.session.commit()
+        return redirect(url_for("admin_courses_list"))
+
+    return render_template("admin/admin_course_form.html", title="Добавить курс", form_action=url_for("admin_add_course"))
+
+@app.route("/admin/courses/edit/<int:course_id>", methods=["GET", "POST"])
+def admin_edit_course(course_id):
+    course = Course.query.get_or_404(course_id)
+
+    if request.method == "POST":
+        course.title = request.form["title"]
+        course.youtube_id = request.form["youtube_id"]
+        course.description = request.form.get("description")
+        db.session.commit()
+        return redirect(url_for("admin_courses_list"))
+
+    return render_template("admin/admin_course_form.html", title="Редактировать курс", course=course, form_action=url_for("admin_edit_course", course_id=course.id))
+
+@app.route("/admin/courses/delete/<int:course_id>", methods=["POST"])
+def admin_delete_course(course_id):
+    course = Course.query.get_or_404(course_id)
+    db.session.delete(course)
+    db.session.commit()
+    return redirect(url_for("admin_courses_list"))
 # формы с сайта
 @app.post("/submit")
 def submit_form():
@@ -536,6 +580,7 @@ def admin_delete_news(article_id: int):
 # ─────────────────────────── Локальный запуск ───────────────────
 if __name__ == "__main__":
     app.run(debug=True)
+
 
 
 
