@@ -38,7 +38,7 @@
           required
           maxlength="200"
           placeholder="Например: Открытие сезона и новые абонементы"
-          value="{{ article.title if article else '' }}">
+          value="{{ article.title|e if article else '' }}">
         <small class="muted">До 200 символов — это поле идёт в список и SEO-title.</small>
       </div>
 
@@ -138,4 +138,5 @@
   </script>
 </body>
 </html>
+
 
