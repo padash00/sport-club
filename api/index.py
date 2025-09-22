@@ -66,7 +66,8 @@ app.config['EMAIL_TO']      = env('EMAIL_TO', '')
 # ───────────────────── Загрузка изображений ──────────────────────
 # ── Cloudinary / локальные медиа ───────────────────────────────────────────────
 ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp"}
-
+COACHES_SUB = "images/coaches"
+NEWS_SUB    = "images/news"
 def allowed_file(fname: str) -> bool:
     return "." in fname and fname.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
 
@@ -344,7 +345,7 @@ def admin_add_coach():
                            form_action=url_for('admin_add_coach'))
 
 
-@@app.route('/admin/coaches/edit/<int:coach_id>', methods=['GET', 'POST'])
+@app.route('/admin/coaches/edit/<int:coach_id>', methods=['GET', 'POST'])
 @requires_admin
 def admin_edit_coach(coach_id: int):
     coach = Coach.query.get_or_404(coach_id)
@@ -534,6 +535,7 @@ def admin_delete_news(article_id: int):
 # ─────────────────────────── Локальный запуск ───────────────────
 if __name__ == "__main__":
     app.run(debug=True)
+
 
 
 
