@@ -9,6 +9,7 @@ import smtplib
 from flask import Flask, render_template, request, redirect, url_for, Response
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.utils import secure_filename
+from api.models import db, Course
 
 # ───────────────────────── Папки проекта ─────────────────────────
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -535,6 +536,7 @@ def admin_delete_news(article_id: int):
 # ─────────────────────────── Локальный запуск ───────────────────
 if __name__ == "__main__":
     app.run(debug=True)
+
 
 
 
