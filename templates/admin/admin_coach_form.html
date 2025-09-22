@@ -51,7 +51,7 @@
           name="specialization"
           maxlength="200"
           placeholder="Горные лыжи для новичков, фристайл"
-          value="{{ coach.specialization if coach else '' }}">
+          value="{{ coach.specialization|e if coach else '' }}"
       </div>
 
       {% if coach and coach.photo_path %}
@@ -99,4 +99,5 @@
   </div>
 </body>
 </html>
+
 
