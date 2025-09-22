@@ -94,7 +94,7 @@
           name="description"
           rows="4"
           maxlength="2000"
-          placeholder="Кратко опишите, что входит в услугу, ограничения и условия.">{{ service.description if service else '' }}</textarea>
+          placeholder="Кратко опишите, что входит в услугу, ограничения и условия.">{{ service.description|e if service else '' }}</textarea>
         <small class="muted">До 2000 символов. В прайсе выводится в последней колонке.</small>
       </div>
 
@@ -184,5 +184,6 @@
   </script>
 </body>
 </html>
+
 
 
