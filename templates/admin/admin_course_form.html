@@ -1,0 +1,23 @@
+<form method="POST" action="{{ form_action }}">
+  <div class="form-group">
+    <label for="title">Название курса:</label>
+    <input type="text" id="title" name="title" required maxlength="150" value="{{ course.title if course else '' }}">
+  </div>
+
+  <div class="form-group">
+    <label for="youtube_id">YouTube ID:</label>
+    <input type="text" id="youtube_id" name="youtube_id" required maxlength="50"
+           placeholder="Напр.: dQw4w9WgXcQ"
+           value="{{ course.youtube_id if course else '' }}">
+    <small>Вставляй только ID ролика (после `v=` в ссылке).</small>
+  </div>
+
+  <div class="form-group">
+    <label for="description">Описание:</label>
+    <textarea id="description" name="description" rows="4" maxlength="500">{{ course.description if course else '' }}</textarea>
+  </div>
+
+  <button type="submit" class="submit-button">
+    {{ 'Сохранить изменения' if course else 'Добавить курс' }}
+  </button>
+</form>
