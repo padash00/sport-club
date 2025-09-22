@@ -51,7 +51,7 @@
           rows="12"
           required
           maxlength="20000"
-          placeholder="Полный текст новости. Пустые строки = абзацы.">{{ article.content if article else '' }}</textarea>
+          placeholder="Полный текст новости. Пустые строки = абзацы.">{{ article.content|e if article else '' }}</textarea>
         <small class="muted">Переносы строк сохраняются при отображении.</small>
       </div>
 
@@ -138,5 +138,6 @@
   </script>
 </body>
 </html>
+
 
 
