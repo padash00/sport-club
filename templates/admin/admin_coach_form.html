@@ -28,7 +28,7 @@
           autocomplete="name"
           maxlength="100"
           placeholder="Иван Иванов"
-          value="{{ coach.name|e if coach else '' }}"
+          value="{{ coach.name|e if coach else '' }}">
       </div>
 
       <div class="form-group">
@@ -38,9 +38,7 @@
           name="experience"
           rows="6"
           maxlength="2000"
-          placeholder="— 10 лет инструкторской практики&#10;— Сертификат ISIA Level 2&#10;— Курсы первой помощи">
-{{ coach.experience|e if coach else '' }}
-</textarea>
+          placeholder="— 10 лет инструкторской практики&#10;— Сертификат ISIA Level 2&#10;— Курсы первой помощи">{{ coach.experience|e if coach else '' }}</textarea>
         <small>Подсказка: перенос строки = новый пункт, на сайте мы отобразим их построчно.</small>
       </div>
 
@@ -52,14 +50,14 @@
           name="specialization"
           maxlength="200"
           placeholder="Горные лыжи для новичков, фристайл"
-          value="{{ coach.specialization|e if coach else '' }}"
+          value="{{ coach.specialization|e if coach else '' }}">
       </div>
 
       {% if coach and coach.photo_path %}
       <div class="form-group current-photo">
         <label>Текущее фото:</label>
         <img
-          src="{{ url_for('static', filename=coach.photo_path) }}"
+          src="{{ media_url(coach.photo_path) }}"
           alt="Текущее фото {{ coach.name }}"
           loading="lazy">
         <small>Чтобы заменить фото — загрузите новый файл ниже. Если файл не выбирать, текущее фото сохранится.</small>
@@ -100,6 +98,3 @@
   </div>
 </body>
 </html>
-
-
-
