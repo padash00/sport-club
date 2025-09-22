@@ -83,7 +83,7 @@
               <form method="POST"
                     action="{{ url_for('admin_delete_news', article_id=article.id) }}"
                     style="display:inline;"
-                    onsubmit="return confirm('Удалить новость «{{ article.title }}»? Это действие необратимо.');">
+                    onsubmit="return confirm('Удалить новость ' + {{ article.title|tojson }} + '? Это действие необратимо.');">
                 <button type="submit" class="delete-button" aria-label="Удалить новость {{ article.title }}">Удал.</button>
               </form>
             </td>
@@ -133,4 +133,5 @@
   </script>
 </body>
 </html>
+
 
