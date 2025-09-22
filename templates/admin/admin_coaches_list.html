@@ -59,7 +59,7 @@
             <td>{{ coach.id }}</td>
             <td>
               {% if coach.photo_path %}
-                <img src="{{ url_for('static', filename=coach.photo_path) }}"
+                <img src="{{ media_url(coach.photo_path) }}"
                      alt="Фото: {{ coach.name }}"
                      width="50" height="50"
                      style="border-radius:50%; object-fit:cover;"
@@ -130,3 +130,4 @@
   </script>
 </body>
 </html>
+
