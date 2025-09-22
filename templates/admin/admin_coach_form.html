@@ -28,7 +28,7 @@
           autocomplete="name"
           maxlength="100"
           placeholder="Иван Иванов"
-          value="{{ coach.name if coach else '' }}">
+          value="{{ coach.name|e if coach else '' }}"
       </div>
 
       <div class="form-group">
@@ -99,3 +99,4 @@
   </div>
 </body>
 </html>
+
