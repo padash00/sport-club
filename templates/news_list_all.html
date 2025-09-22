@@ -76,7 +76,7 @@
               <div class="news-thumbnail-container">
                 <a href="{{ url_for('news_article_detail', article_id=article.id) }}">
                   <img
-                    src="{{ url_for('static', filename=article.image_path) }}"
+                    src="{{ media_url(article.image_path) }}"
                     alt="{{ article.title }}"
                     class="news-thumbnail"
                     loading="lazy">
@@ -131,3 +131,4 @@
   <script src="{{ url_for('static', filename='script.js') }}" defer></script>
 </body>
 </html>
+
