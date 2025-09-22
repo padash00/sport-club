@@ -72,7 +72,7 @@
             <td class="admin-actions">
               <a href="{{ url_for('admin_edit_service', service_id=service.id) }}" class="edit-button" title="Редактировать {{ service.name }}">Ред.</a>
               <form method="POST" action="{{ url_for('admin_delete_service', service_id=service.id) }}" style="display:inline;"
-                    onsubmit="return confirm('Удалить услугу «{{ service.name }}»? Это действие необратимо.');">
+                    onsubmit="return confirm('Удалить услугу ' + {{ service.name|tojson }} + '? Это действие необратимо.');">
                 <button type="submit" class="delete-button" aria-label="Удалить услугу {{ service.name }}">Удал.</button>
               </form>
             </td>
@@ -232,3 +232,4 @@
   </script>
 </body>
 </html>
+
