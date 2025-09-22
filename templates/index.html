@@ -76,7 +76,7 @@
               {% if article.image_path %}
               <div class="news-item-image">
                 <a href="{{ url_for('news_article_detail', article_id=article.id) }}">
-                  <img src="{{ url_for('static', filename=article.image_path) }}"
+                  <img src="{{ media_url(article.image_path) }}"
                        alt="{{ article.title }}">
                 </a>
               </div>
@@ -127,3 +127,4 @@
   <script src="{{ url_for('static', filename='script.js') }}" defer></script>
 </body>
 </html>
+
