@@ -76,7 +76,7 @@
               <form method="POST"
                     action="{{ url_for('admin_delete_coach', coach_id=coach.id) }}"
                     style="display:inline;"
-                    onsubmit="return confirm('Удалить тренера «{{ coach.name }}»? Это действие необратимо.');">
+                    onsubmit="return confirm('Удалить тренера ' + {{ coach.name|tojson }} + '? Это действие необратимо.');">
                 <button type="submit" class="delete-button" aria-label="Удалить тренера {{ coach.name }}">Удал.</button>
               </form>
             </td>
@@ -130,4 +130,5 @@
   </script>
 </body>
 </html>
+
 
