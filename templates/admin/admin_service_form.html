@@ -43,7 +43,7 @@
           required
           maxlength="150"
           placeholder="Напр.: Прокат лыж комплект / Индивидуальная тренировка"
-          value="{{ service.name if service else '' }}">
+          value="{{ service.name|e if service else '' }}">
         <small class="muted">До 150 символов. Это попадёт в название в прайс-таблице.</small>
       </div>
 
@@ -184,3 +184,4 @@
   </script>
 </body>
 </html>
+
