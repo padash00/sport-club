@@ -9,6 +9,8 @@ import smtplib
 from flask import Flask, render_template, request, redirect, url_for, Response
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.utils import secure_filename
+
+# ВАЖНО: используем единый db из models.py
 from api.models import db, Course
 
 # ───────────────────────── Папки проекта ─────────────────────────
@@ -48,14 +50,15 @@ db_url = env('DATABASE_URL')
 if db_url and db_url.startswith('postgres://'):
     db_url = db_url.replace('postgres://', 'postgresql://', 1)
 if not db_url:
-    db_url = 'sqlite:///' + os.path.join(ROOT_DIR, 'sportclub.db')  # локальная разработка
+    # ВНИМАНИЕ: на Vercel FS read-only. SQLite годится только локально.
+    db_url = 'sqlite:///' + os.path.join(ROOT_DIR, 'sportclub.db')
 
 app.config['SQLALCHEMY_DATABASE_URI'] = db_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-# чуть устойчивее коннекты в бессерверной среде
 app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {"pool_pre_ping": True}
 
-db = SQLAlchemy(app)
+# ИНИЦИАЛИЗИРУЕМ ЕДИНЫЙ db, НЕ СОЗДАЁМ НОВЫЙ SQLAlchemy(app)!
+db.init_app(app)
 
 # ───────────────────── SMTP (контакты на сайте) ──────────────────
 app.config['SMTP_SERVER']   = env('SMTP_SERVER', 'smtp.gmail.com')
@@ -65,15 +68,13 @@ app.config['SMTP_PASSWORD'] = env('SMTP_PASSWORD', '')
 app.config['EMAIL_TO']      = env('EMAIL_TO', '')
 
 # ───────────────────── Загрузка изображений ──────────────────────
-# ── Cloudinary / локальные медиа ───────────────────────────────────────────────
 ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp"}
 COACHES_SUB = "images/coaches"
 NEWS_SUB    = "images/news"
+
 def allowed_file(fname: str) -> bool:
     return "." in fname and fname.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
 
-
-# Опциональная интеграция с Cloudinary (в проде на Vercel)
 CLOUDINARY_URL = env("CLOUDINARY_URL")
 USE_CLOUDINARY = False
 if CLOUDINARY_URL:
@@ -86,26 +87,10 @@ if CLOUDINARY_URL:
         print("Cloudinary init error:", e)
         USE_CLOUDINARY = False
 
-
 def store_image(file_storage, rel_subdir: str, cloud_folder: str | None = None):
-    """
-    Сохраняет изображение и возвращает словарь:
-      {"url": <https-url или относительный 'images/...'>, "id": <cloudinary public_id|None>}
-
-    Поведение:
-    • Если задан CLOUDINARY_URL → загрузка в Cloudinary и возврат HTTPS-URL.
-    • Если серверлес без Cloudinary → вернуть None (на Vercel файловая система read-only).
-    • Если локальный запуск → сохранить файл в static/<rel_subdir>/ и вернуть относительный путь.
-
-    Параметры:
-      file_storage — объект из request.files.get("...").
-      rel_subdir   — относительная папка внутри /static (например, 'images/news').
-      cloud_folder — подпапка в Cloudinary (по умолчанию берётся rel_subdir).
-    """
     if not file_storage or file_storage.filename == "" or not allowed_file(file_storage.filename):
         return None
 
-    # Прод: Cloudinary
     if USE_CLOUDINARY:
         try:
             folder = f"vershina/{(cloud_folder or rel_subdir).strip('/')}"
@@ -121,44 +106,34 @@ def store_image(file_storage, rel_subdir: str, cloud_folder: str | None = None):
             print("Cloudinary upload error:", e)
             return None
 
-    # Серверлес без облака — сохранить нельзя
     if IS_SERVERLESS:
         print(f"Uploads disabled on serverless without CLOUDINARY_URL (file={file_storage.filename})")
         return None
 
-    # Локальная разработка: сохранить в /static/<rel_subdir>/
     fname = secure_filename(file_storage.filename)
     local_dir = os.path.join(app.static_folder, rel_subdir)
     os.makedirs(local_dir, exist_ok=True)
     file_storage.save(os.path.join(local_dir, fname))
     return {"url": f"{rel_subdir}/{fname}", "id": None}
 
-
 def delete_image(public_id: str | None):
-    """Удалить файл из Cloudinary по public_id (если вы его где-то храните)."""
     if USE_CLOUDINARY and public_id:
         try:
             cloudinary.uploader.destroy(public_id, invalidate=True, resource_type="image")  # type: ignore
         except Exception as e:  # noqa: BLE001
             print("Cloudinary delete error:", e)
 
-
 def media_url(path: str | None) -> str:
-    """
-    Вернуть корректный src для <img>:
-    • если path — абсолютный http(s) (Cloudinary), вернуть как есть;
-    • если относительный 'images/...', собрать через url_for('static', ...).
-    """
     if not path:
         return ""
     return path if path.startswith(("http://", "https://")) else url_for("static", filename=path)
 
-
-# Чтобы вызывать прямо из шаблонов: {{ media_url(obj.image_path) }}
 @app.context_processor
 def inject_media_helpers():
     return {"media_url": media_url}
+
 # ─────────────────────────── Модели ──────────────────────────────
+# Эти модели используют ЕДИНЫЙ db из api.models
 class Coach(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
@@ -174,7 +149,7 @@ class Service(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(150), nullable=False)
     description = db.Column(db.Text)
-    price = db.Column(db.Float, nullable=False)  # если нужен cent-точный учёт — поменяй на Numeric(10,2)
+    price = db.Column(db.Float, nullable=False)
     duration = db.Column(db.String(50))
     section = db.Column(db.String(50), nullable=False)  # 'ski' | 'gym'
 
@@ -186,7 +161,7 @@ class NewsArticle(db.Model):
     title = db.Column(db.String(200), nullable=False)
     content = db.Column(db.Text, nullable=False)
     pub_date = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
-    image_path = db.Column(db.String(300))  # может быть относительным путём или HTTPS-URL (Cloudinary)
+    image_path = db.Column(db.String(300))
 
     def __repr__(self):
         return f"<NewsArticle {self.title}>"
@@ -250,107 +225,79 @@ def contacts_page():
 def thank_you():
     return "Спасибо!"
 
+# ───────────── Видеокурсы (публичная страница) ─────────────
 @app.route("/courses")
 def courses():
-    courses = Course.query.all()
-    return render_template("courses.html", title="Видеокурсы", courses=courses)
-
-
-@app.route("/admin/courses")
-def admin_courses_list():
-    courses = Course.query.all()
-    return render_template("admin/admin_courses_list.html", title="Управление курсами", courses=courses)
-
-@app.route("/admin/courses/add", methods=["GET", "POST"])
-def admin_add_course():
-    if request.method == "POST":
-        title = request.form["title"]
-        youtube_id = request.form["youtube_id"]
-        description = request.form.get("description")
-
-        course = Course(title=title, youtube_id=youtube_id, description=description)
-        db.session.add(course)
-        db.session.commit()
-        return redirect(url_for("admin_courses_list"))
-
-    return render_template("admin/admin_course_form.html", title="Добавить курс", form_action=url_for("admin_add_course"))
-
-@app.route("/admin/courses/edit/<int:course_id>", methods=["GET", "POST"])
-def admin_edit_course(course_id):
-    course = Course.query.get_or_404(course_id)
-
-    if request.method == "POST":
-        course.title = request.form["title"]
-        course.youtube_id = request.form["youtube_id"]
-        course.description = request.form.get("description")
-        db.session.commit()
-        return redirect(url_for("admin_courses_list"))
-
-    return render_template("admin/admin_course_form.html", title="Редактировать курс", course=course, form_action=url_for("admin_edit_course", course_id=course.id))
-
-@app.route("/admin/courses/delete/<int:course_id>", methods=["POST"])
-def admin_delete_course(course_id):
-    course = Course.query.get_or_404(course_id)
-    db.session.delete(course)
-    db.session.commit()
-    return redirect(url_for("admin_courses_list"))
-# формы с сайта
-@app.post("/submit")
-def submit_form():
-    name = request.form.get("userName")
-    phone = request.form.get("userPhone")
-    print(f"[FORM] Заявка: name={name!r} phone={phone!r}")
-    return redirect(url_for("thank_you"))
-
-@app.post("/submit-contact")
-def submit_contact_form():
-    name = request.form.get('contact_name')
-    email_from_user = request.form.get('contact_email')
-    subject_from_user = request.form.get('contact_subject', 'Без темы')
-    message_text = request.form.get('contact_message')
-
-    try:
-        smtp_server = app.config['SMTP_SERVER']
-        smtp_port   = int(app.config['SMTP_PORT'])
-        smtp_user   = app.config['SMTP_USERNAME']
-        smtp_pass   = app.config['SMTP_PASSWORD']
-        email_to    = app.config['EMAIL_TO']
-
-        if all([smtp_server, smtp_port, smtp_user, smtp_pass, email_to]):
-            body = f"""
-            <html><body>
-                <h2>Сообщение с сайта СК "Вершина"</h2>
-                <p><b>От:</b> {name} ({email_from_user})</p>
-                <p><b>Тема:</b> {subject_from_user}</p>
-                <hr>
-                <pre style="white-space:pre-wrap;">{message_text}</pre>
-            </body></html>
-            """
-            msg = MIMEText(body, 'html', 'utf-8')
-            msg['From'] = smtp_user
-            msg['To'] = email_to
-            msg['Subject'] = Header(f"Сообщение с сайта: {subject_from_user}", 'utf-8')
-            if email_from_user:
-                msg.add_header('Reply-To', email_from_user)
-
-            server = smtplib.SMTP(smtp_server, smtp_port)
-            server.ehlo(); server.starttls(); server.ehlo()
-            server.login(smtp_user, smtp_pass)
-            server.sendmail(smtp_user, email_to, msg.as_string())
-            server.quit()
-            print("[CONTACT] письмо отправлено")
-        else:
-            print("[CONTACT] SMTP не настроен — пропускаем отправку")
-    except Exception as e:  # noqa: BLE001
-        print(f"[CONTACT] ошибка отправки письма: {e}")
-
-    return redirect(url_for("thank_you"))
+    items = Course.query.order_by(Course.id.desc()).all()
+    return render_template("courses.html", title="Видеокурсы", courses=items)
 
 # ───────────────────────── Админ-панель ──────────────────────────
 @app.route("/admin")
 @requires_admin
 def admin_root():
     return redirect(url_for("admin_coaches_list"))
+
+# --- Курсы (админка) ---
+@app.route("/admin/courses")
+@requires_admin
+def admin_courses_list():
+    items = Course.query.order_by(Course.id.desc()).all()
+    return render_template("admin/admin_courses_list.html",
+                           title="Управление курсами", courses=items)
+
+@app.route("/admin/courses/add", methods=["GET", "POST"])
+@requires_admin
+def admin_add_course():
+    if request.method == "POST":
+        title = request.form.get("title", "").strip()
+        youtube_id = request.form.get("youtube_id", "").strip()
+        description = request.form.get("description", "").strip()
+
+        if not title or not youtube_id:
+            return render_template("admin/admin_course_form.html",
+                                   title="Ошибка: заполните обязательные поля",
+                                   form_action=url_for("admin_add_course"),
+                                   error="Название и YouTube ID обязательны.")
+
+        db.session.add(Course(title=title, youtube_id=youtube_id, description=description))
+        db.session.commit()
+        return redirect(url_for("admin_courses_list"))
+
+    return render_template("admin/admin_course_form.html",
+                           title="Добавить курс",
+                           form_action=url_for("admin_add_course"))
+
+@app.route("/admin/courses/edit/<int:course_id>", methods=["GET", "POST"])
+@requires_admin
+def admin_edit_course(course_id):
+    course = Course.query.get_or_404(course_id)
+
+    if request.method == "POST":
+        course.title = request.form.get("title", "").strip()
+        course.youtube_id = request.form.get("youtube_id", "").strip()
+        course.description = request.form.get("description", "").strip()
+
+        if not course.title or not course.youtube_id:
+            return render_template("admin/admin_course_form.html",
+                                   title="Ошибка: заполните обязательные поля",
+                                   course=course,
+                                   form_action=url_for("admin_edit_course", course_id=course.id),
+                                   error="Название и YouTube ID обязательны.")
+        db.session.commit()
+        return redirect(url_for("admin_courses_list"))
+
+    return render_template("admin/admin_course_form.html",
+                           title="Редактировать курс",
+                           course=course,
+                           form_action=url_for("admin_edit_course", course_id=course.id))
+
+@app.post("/admin/courses/delete/<int:course_id>")
+@requires_admin
+def admin_delete_course(course_id):
+    course = Course.query.get_or_404(course_id)
+    db.session.delete(course)
+    db.session.commit()
+    return redirect(url_for("admin_courses_list"))
 
 # --- Тренеры ---
 @app.route('/admin/coaches')
@@ -389,7 +336,6 @@ def admin_add_coach():
                            title="Добавить нового тренера",
                            form_action=url_for('admin_add_coach'))
 
-
 @app.route('/admin/coaches/edit/<int:coach_id>', methods=['GET', 'POST'])
 @requires_admin
 def admin_edit_coach(coach_id: int):
@@ -411,7 +357,6 @@ def admin_edit_coach(coach_id: int):
                            title="Редактировать тренера",
                            form_action=url_for('admin_edit_coach', coach_id=coach_id),
                            coach=coach)
-
 
 @app.post('/admin/coaches/delete/<int:coach_id>')
 @requires_admin
@@ -568,7 +513,6 @@ def admin_edit_news(article_id: int):
                            form_action=url_for('admin_edit_news', article_id=article_id),
                            article=article)
 
-
 @app.post('/admin/news/delete/<int:article_id>')
 @requires_admin
 def admin_delete_news(article_id: int):
@@ -580,9 +524,3 @@ def admin_delete_news(article_id: int):
 # ─────────────────────────── Локальный запуск ───────────────────
 if __name__ == "__main__":
     app.run(debug=True)
-
-
-
-
-
-
