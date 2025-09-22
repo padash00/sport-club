@@ -61,7 +61,7 @@
         <div class="form-group current-photo">
           <label>Текущая картинка:</label>
           <div class="preview">
-            <img src="{{ url_for('static', filename=article.image_path) }}"
+            <img src="{{ media_url(article.image_path) }}"
                  alt="Текущая картинка «{{ article.title }}»"
                  loading="lazy">
             <div class="muted">
@@ -138,3 +138,4 @@
   </script>
 </body>
 </html>
+
