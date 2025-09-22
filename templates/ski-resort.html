@@ -59,7 +59,7 @@
             {% for coach in coaches %}
             <div class="instructor-card">
               {% if coach.photo_path %}
-                <img src="{{ url_for('static', filename=coach.photo_path) }}"
+                <img src="{{ media_url(coach.photo_path) }}"
                      alt="{{ coach.name }}"
                      loading="lazy">
               {% else %}
@@ -166,3 +166,4 @@
   <script src="{{ url_for('static', filename='script.js') }}" defer></script>
 </body>
 </html>
+
