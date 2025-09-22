@@ -56,7 +56,7 @@
               {% if article.image_path %}
                 <img
                   class="thumb"
-                  src="{{ url_for('static', filename=article.image_path) }}"
+                  src="{{ media_url(article.image_path) }}"
                   alt="Изображение: {{ article.title }}"
                   loading="lazy" width="70" height="50">
               {% else %}
@@ -133,3 +133,4 @@
   </script>
 </body>
 </html>
+
