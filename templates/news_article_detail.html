@@ -60,7 +60,7 @@
       {% endif %}
 
       {% if article.image_path %}
-        <img src="{{ url_for('static', filename=article.image_path) }}"
+        <img src="{{ media_url(article.image_path) }}"
              alt="{{ article.title }}"
              class="news-image">
       {% endif %}
@@ -98,3 +98,4 @@
   <script src="{{ url_for('static', filename='script.js') }}" defer></script>
 </body>
 </html>
+
