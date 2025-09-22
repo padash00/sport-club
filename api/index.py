@@ -322,7 +322,9 @@ def admin_add_coach():
         experience = request.form.get('experience')
         specialization = request.form.get('specialization')
         section = request.form.get('section')
-        photo_rel = save_image(request.files.get('photo_file'), COACHES_SUB)
+
+        img = store_image(request.files.get('photo_file'), COACHES_SUB, 'coaches')
+        photo_url = img['url'] if img else None
 
         if not name or not section:
             return render_template('admin/admin_coach_form.html',
@@ -332,7 +334,7 @@ def admin_add_coach():
 
         db.session.add(Coach(
             name=name, experience=experience, specialization=specialization,
-            section=section, photo_path=photo_rel or None
+            section=section, photo_path=photo_url
         ))
         db.session.commit()
         return redirect(url_for('admin_coaches_list'))
@@ -341,7 +343,8 @@ def admin_add_coach():
                            title="Добавить нового тренера",
                            form_action=url_for('admin_add_coach'))
 
-@app.route('/admin/coaches/edit/<int:coach_id>', methods=['GET', 'POST'])
+
+@@app.route('/admin/coaches/edit/<int:coach_id>', methods=['GET', 'POST'])
 @requires_admin
 def admin_edit_coach(coach_id: int):
     coach = Coach.query.get_or_404(coach_id)
@@ -350,9 +353,11 @@ def admin_edit_coach(coach_id: int):
         coach.experience = request.form.get('experience')
         coach.specialization = request.form.get('specialization')
         coach.section = request.form.get('section')
-        new_photo = save_image(request.files.get('photo_file'), COACHES_SUB)
-        if new_photo:
-            coach.photo_path = new_photo
+
+        img = store_image(request.files.get('photo_file'), COACHES_SUB, 'coaches')
+        if img:
+            coach.photo_path = img['url']
+
         db.session.commit()
         return redirect(url_for('admin_coaches_list'))
 
@@ -360,6 +365,7 @@ def admin_edit_coach(coach_id: int):
                            title="Редактировать тренера",
                            form_action=url_for('admin_edit_coach', coach_id=coach_id),
                            coach=coach)
+
 
 @app.post('/admin/coaches/delete/<int:coach_id>')
 @requires_admin
@@ -478,9 +484,11 @@ def admin_add_news():
                                    title="Ошибка: Заполните заголовок и текст",
                                    form_action=url_for('admin_add_news'),
                                    error="Заголовок и текст новости обязательны.")
-        img_rel = save_image(request.files.get('image_file'), NEWS_SUB)
-        db.session.add(NewsArticle(title=title, content=content,
-                                   image_path=img_rel or None))
+
+        img = store_image(request.files.get('image_file'), NEWS_SUB, 'news')
+        img_url = img['url'] if img else None
+
+        db.session.add(NewsArticle(title=title, content=content, image_path=img_url))
         db.session.commit()
         return redirect(url_for('admin_news_list'))
 
@@ -495,9 +503,11 @@ def admin_edit_news(article_id: int):
     if request.method == 'POST':
         article.title = request.form.get('title')
         article.content = request.form.get('content')
-        img_rel = save_image(request.files.get('image_file'), NEWS_SUB)
-        if img_rel:
-            article.image_path = img_rel
+
+        img = store_image(request.files.get('image_file'), NEWS_SUB, 'news')
+        if img:
+            article.image_path = img['url']
+
         if not article.title or not article.content:
             return render_template('admin/admin_news_form.html',
                                    title="Ошибка: Заполните заголовок и текст",
@@ -512,6 +522,7 @@ def admin_edit_news(article_id: int):
                            form_action=url_for('admin_edit_news', article_id=article_id),
                            article=article)
 
+
 @app.post('/admin/news/delete/<int:article_id>')
 @requires_admin
 def admin_delete_news(article_id: int):
@@ -523,5 +534,6 @@ def admin_delete_news(article_id: int):
 # ─────────────────────────── Локальный запуск ───────────────────
 if __name__ == "__main__":
     app.run(debug=True)
+
 
 
