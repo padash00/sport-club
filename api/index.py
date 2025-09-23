@@ -256,8 +256,15 @@ def thank_you():
 # ───────────── Видеокурсы (публичная страница) ─────────────
 @app.route("/courses")
 def courses():
-    items = Course.query.order_by(Course.id.desc()).all()
-    return render_template("courses.html", title="Видеокурсы", courses=items)
+    page = max(int(request.args.get("page", 1) or 1), 1)
+    per_page = 9  # по 9 (3×3)
+    pagination = Course.query.order_by(Course.id.desc()).paginate(page=page, per_page=per_page, error_out=False)
+    return render_template(
+        "courses.html",
+        title="Видеокурсы",
+        courses=pagination.items,
+        pagination=pagination
+    )
 
 # ───────────── Формы с сайта (нужны шаблонам!) ─────────────
 @app.route("/submit", methods=["POST"])
@@ -604,6 +611,7 @@ def admin_delete_news(article_id: int):
 # ─────────────────────────── Локальный запуск ───────────────────
 if __name__ == "__main__":
     app.run(debug=True)
+
 
 
 
