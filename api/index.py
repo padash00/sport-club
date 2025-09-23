@@ -263,7 +263,7 @@ def submit_contact_form():
         if all([smtp_server, smtp_port, smtp_user, smtp_pass, email_to]):
             body = f"""
             <html><body>
-                <h2>Сообщение с сайта СК "Вершина"</h2>
+                <h2>Сообщение с сайта СК "Алтайские Барсы"</h2>
                 <p><b>От:</b> {name} ({email_from_user})</p>
                 <p><b>Тема:</b> {subject_from_user}</p>
                 <hr>
@@ -583,3 +583,4 @@ def admin_delete_news(article_id: int):
 # ─────────────────────────── Локальный запуск ───────────────────
 if __name__ == "__main__":
     app.run(debug=True)
+
