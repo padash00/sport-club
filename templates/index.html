@@ -126,8 +126,15 @@
   </footer>
 
   <script src="{{ url_for('static', filename='script.js') }}" defer></script>
+<!-- Floating WhatsApp -->
+<a class="wa-fab" href="{{ wa_link(SITE_WA_PHONE, SITE_WA_TEXT) }}" target="_blank" rel="noopener" aria-label="Записаться в WhatsApp">
+  <span class="wa-badge">Записаться / Бронировать</span>
+  <img src="{{ url_for('static', filename='images/whatsapp.svg') }}" alt="WhatsApp" width="28" height="28" loading="lazy">
+</a>
+
 </body>
 </html>
+
 
 
 
