@@ -5,32 +5,43 @@
   <meta charset="UTF-8">
   <title>{{ title }} - СК "Алтайские Барсы"</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Шрифты (как на главной) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <script defer src="{{ url_for('static', filename='script.js') }}"></script>
 </head>
 <body class="ski-theme">
-  <!-- Хедер/навигация такой же, как на остальных страницах -->
+  <!-- Хедер / навигация -->
   <header class="site-header">
     <div class="container">
       <div class="logo"><a href="{{ url_for('index') }}">СК "Алтайские барсы"</a></div>
-      <button id="burger-menu" class="burger-menu" aria-label="Меню" aria-expanded="false">
-        <span></span><span></span><span></span>
-      </button>
-      <nav id="main-nav" class="main-nav" aria-label="Главная навигация">
+
+      <nav id="main-nav" class="main-nav" aria-label="Основная навигация">
         <ul>
           <li><a href="{{ url_for('ski_resort') }}">Горнолыжная база</a></li>
           <li><a href="{{ url_for('gym') }}">Тренажерный зал</a></li>
           <li><a href="{{ url_for('courses') }}" class="active">Видеокурсы</a></li>
           <li><a href="{{ url_for('news_list_all') }}">Новости</a></li>
-          
           <li><a href="{{ url_for('contacts_page') }}">Контакты</a></li>
         </ul>
       </nav>
+
+      <button id="burger-menu"
+              class="burger-menu"
+              aria-label="Открыть меню"
+              aria-controls="main-nav"
+              aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
     </div>
   </header>
 
   <!-- Шапка страницы -->
-  <section class="page-header ski-theme">
+  <section class="page-header">
     <div class="container">
       <h1>Видеокурсы</h1>
       <p>Авторские видеоуроки и подборки с YouTube</p>
@@ -40,26 +51,64 @@
   <!-- Сетка карточек -->
   <section class="courses-section">
     <div class="container">
-      {% if courses %}
+      {% set items = courses %}
+      {% if not items and pagination %}
+        {% set items = pagination.items %}
+      {% endif %}
+
+      {% if items %}
         <div class="courses-grid">
-          {% for c in courses %}
+          {% for c in items %}
           <article class="course-card">
-            <div class="video-wrap">
-              <iframe
-                src="https://www.youtube.com/embed/{{ c.youtube_id }}"
-                title="{{ c.title }}"
-                loading="lazy"
-                referrerpolicy="strict-origin-when-cross-origin"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                allowfullscreen></iframe>
-            </div>
+            <!-- Превью (iframe вставится по клику) -->
+            <button class="video-wrap js-yt" data-yt="{{ c.youtube_id }}" aria-label="Смотреть видео {{ c.title }}">
+              <img
+                src="https://img.youtube.com/vi/{{ c.youtube_id }}/hqdefault.jpg"
+                alt="Превью: {{ c.title }}"
+                loading="lazy">
+              <span style="position:absolute;inset:0;display:grid;place-items:center;">
+                <svg width="72" height="72" viewBox="0 0 72 72" fill="none" aria-hidden="true" focusable="false">
+                  <circle cx="36" cy="36" r="36" fill="rgba(0,0,0,.55)"/>
+                  <path d="M30 24v24l20-12-20-12z" fill="#fff"/>
+                </svg>
+              </span>
+            </button>
+
             <h4>{{ c.title }}</h4>
             {% if c.description %}
               <p>{{ c.description }}</p>
             {% endif %}
+
+            <noscript>
+              <!-- Фолбэк без JS -->
+              <div class="video-wrap">
+                <iframe
+                  src="https://www.youtube-nocookie.com/embed/{{ c.youtube_id }}?rel=0"
+                  title="{{ c.title }}"
+                  loading="lazy"
+                  referrerpolicy="origin-when-cross-origin"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowfullscreen></iframe>
+              </div>
+            </noscript>
           </article>
           {% endfor %}
         </div>
+
+        {% if pagination %}
+        <nav style="margin-top:18px;display:flex;gap:8px;justify-content:center;">
+          {% if pagination.has_prev %}
+            <a class="btn btn-small" href="{{ url_for('courses', page=pagination.prev_num) }}">&larr; Назад</a>
+          {% endif %}
+          <span style="padding:8px 12px;border:1px solid var(--border);border-radius:8px;background:#fff;">
+            Стр. {{ pagination.page }} / {{ pagination.pages }}
+          </span>
+          {% if pagination.has_next %}
+            <a class="btn btn-small" href="{{ url_for('courses', page=pagination.next_num) }}">Вперёд &rarr;</a>
+          {% endif %}
+        </nav>
+        {% endif %}
+
       {% else %}
         <p>Пока нет добавленных видеокурсов.</p>
       {% endif %}
@@ -84,5 +133,25 @@
       <p>&copy; 2025, СК "Алтайские Барсы". Все права защищены.</p>
     </div>
   </footer>
+
+  <!-- Небольшой скрипт только для ленивой загрузки YouTube на этой странице -->
+  <script>
+    document.addEventListener('click', (e) => {
+      const btn = e.target.closest('.js-yt');
+      if (!btn) return;
+      const id = btn.dataset.yt;
+      const wrap = document.createElement('div');
+      wrap.className = 'video-wrap';
+      const iframe = document.createElement('iframe');
+      iframe.src = `https://www.youtube-nocookie.com/embed/${id}?rel=0&autoplay=1`;
+      iframe.loading = 'lazy';
+      iframe.allowFullscreen = true;
+      iframe.referrerPolicy = 'origin-when-cross-origin';
+      iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
+      Object.assign(iframe.style, {position:'absolute',inset:'0',width:'100%',height:'100%',border:'0'});
+      wrap.appendChild(iframe);
+      btn.replaceWith(wrap);
+    });
+  </script>
 </body>
 </html>
