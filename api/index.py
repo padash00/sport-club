@@ -68,6 +68,10 @@ app.config['SMTP_USERNAME'] = env('SMTP_USERNAME', '')
 app.config['SMTP_PASSWORD'] = env('SMTP_PASSWORD', '')
 app.config['EMAIL_TO']      = env('EMAIL_TO', '')
 
+# ───────────────────── WhatsApp (запись) ─────────────────────
+SITE_WA_PHONE = env('SITE_WA_PHONE', '')  # Пример: +77071234567
+SITE_WA_TEXT  = env('SITE_WA_TEXT', 'Здравствуйте! Хочу записаться')
+
 # ───────────────────── Загрузка изображений ──────────────────────
 ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp"}
 COACHES_SUB = "images/coaches"
@@ -135,9 +139,27 @@ def media_url(path: str | None) -> str:
         return ""
     return path if path.startswith(("http://", "https://")) else url_for("static", filename=path)
 
+def make_wa_link(phone: str | None, text: str | None = None) -> str:
+    """
+    Делает корректную ссылку wa.me с предзаполненным текстом.
+    phone — международный номер, можно с + и пробелами (+7707...).
+    """
+    if not phone:
+        return "#"
+    digits = "".join(ch for ch in phone if ch.isdigit())
+    msg = quote_plus(text or "")
+    return f"https://wa.me/{digits}?text={msg}"
+
+
 @app.context_processor
 def inject_media_helpers():
-    return {"media_url": media_url}
+    return {
+        "media_url": media_url,
+        "wa_link": make_wa_link,
+        "SITE_WA_PHONE": SITE_WA_PHONE,
+        "SITE_WA_TEXT": SITE_WA_TEXT,
+    }
+
 
 # ─────────────────────────── Модели ──────────────────────────────
 # Эти модели используют ЕДИНЫЙ db из api.models
@@ -583,5 +605,6 @@ def admin_delete_news(article_id: int):
 # ─────────────────────────── Локальный запуск ───────────────────
 if __name__ == "__main__":
     app.run(debug=True)
+
 
 
