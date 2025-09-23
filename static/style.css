@@ -426,3 +426,51 @@ a:hover{ color:var(--brand-2-dark); }
   font-size:14px;
   color:var(--muted);
 }
+/* ===== WhatsApp Floating Action Button ===== */
+.wa-fab{
+  position:fixed;
+  right:18px;
+  bottom:18px;
+  z-index:9999;
+  display:inline-flex;
+  align-items:center;
+  gap:10px;
+  background:#25D366;
+  color:#fff;
+  border-radius:999px;
+  padding:12px 14px;
+  box-shadow:0 10px 25px rgba(0,0,0,.18);
+  text-decoration:none;
+  font-weight:700;
+  border:2px solid #1ebe57;
+  transition:transform .2s ease, box-shadow .2s ease, background .2s ease;
+}
+.wa-fab:hover{
+  transform:translateY(-2px);
+  box-shadow:0 14px 30px rgba(0,0,0,.22);
+  background:#20bd5a;
+}
+.wa-fab img{ display:block; }
+
+.wa-badge{
+  background:#0b5127;
+  color:#eafff1;
+  font-size:14px;
+  padding:6px 10px;
+  border-radius:999px;
+  white-space:nowrap;
+  animation:waFloat 2.2s ease-in-out infinite;
+}
+@keyframes waFloat{
+  0%,100% { transform:translateY(0); }
+  50%     { transform:translateY(-4px); }
+}
+
+/* mobile: показывать только круг с иконкой */
+@media (max-width: 560px){
+  .wa-fab{
+    padding:12px;
+    border-radius:50%;
+  }
+  .wa-badge{ display:none; }
+}
