@@ -60,12 +60,24 @@
         <div class="courses-grid">
           {% for c in items %}
           <article class="course-card">
-            <!-- Превью (iframe вставится по клику) -->
-            <button class="video-wrap js-yt" data-yt="{{ c.youtube_id }}" aria-label="Смотреть видео {{ c.title }}">
+            <!-- Превью (iframe вставится по клику скриптом) -->
+            <button
+              type="button"
+              class="video-wrap js-yt"
+              data-yt="{{ c.youtube_id }}"
+              aria-label="Смотреть видео {{ c.title }}">
               <img
                 src="https://img.youtube.com/vi/{{ c.youtube_id }}/hqdefault.jpg"
+                srcset="
+                  https://img.youtube.com/vi/{{ c.youtube_id }}/mqdefault.jpg 320w,
+                  https://img.youtube.com/vi/{{ c.youtube_id }}/hqdefault.jpg 480w,
+                  https://img.youtube.com/vi/{{ c.youtube_id }}/sddefault.jpg 640w,
+                  https://img.youtube.com/vi/{{ c.youtube_id }}/maxresdefault.jpg 1280w"
+                sizes="(max-width:640px) 100vw, (max-width:1024px) 50vw, 33vw"
                 alt="Превью: {{ c.title }}"
-                loading="lazy">
+                width="480" height="360"
+                loading="lazy"
+                decoding="async">
               <span style="position:absolute;inset:0;display:grid;place-items:center;">
                 <svg width="72" height="72" viewBox="0 0 72 72" fill="none" aria-hidden="true" focusable="false">
                   <circle cx="36" cy="36" r="36" fill="rgba(0,0,0,.55)"/>
@@ -86,7 +98,7 @@
                   src="https://www.youtube-nocookie.com/embed/{{ c.youtube_id }}?rel=0"
                   title="{{ c.title }}"
                   loading="lazy"
-                  referrerpolicy="origin-when-cross-origin"
+                  referrerpolicy="strict-origin-when-cross-origin"
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                   allowfullscreen></iframe>
               </div>
