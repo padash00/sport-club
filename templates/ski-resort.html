@@ -78,7 +78,11 @@
                 <p><strong>Специализация:</strong> {{ coach.specialization }}</p>
               {% endif %}
 
-              <a href="#" class="btn js-open-modal">Записаться к {{ coach.name.split()[0] if coach.name else 'инструктору' }}</a>
+              <a class="btn"
+             href="{{ wa_link(SITE_WA_PHONE, 'Здравствуйте! Хочу записаться к ' ~ (coach.name or 'инструктору')) }}"
+             target="_blank" rel="noopener">
+    Записаться к {{ coach.name.split()[0] if coach.name else 'инструктору' }}
+  </a>
             </div>
             {% endfor %}
           </div>
@@ -167,6 +171,7 @@
   <script src="{{ url_for('static', filename='script.js') }}" defer></script>
 </body>
 </html>
+
 
 
 
