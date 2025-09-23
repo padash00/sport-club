@@ -8,7 +8,6 @@ import smtplib
 from urllib.parse import quote_plus
 from flask import Flask, render_template, request, redirect, url_for, Response
 # импорт SQLAlchemy оставлен, хотя экземпляр берём из api.models (не создаём новый!)
-from flask_sqlalchemy import SQLAlchemy  # noqa: F401
 from werkzeug.utils import secure_filename
 
 # ЕДИНЫЙ db + модель Course живут в api/models.py
@@ -605,6 +604,7 @@ def admin_delete_news(article_id: int):
 # ─────────────────────────── Локальный запуск ───────────────────
 if __name__ == "__main__":
     app.run(debug=True)
+
 
 
 
