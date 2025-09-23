@@ -102,15 +102,14 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 });
-// ===== YouTube: подставить iframe по клику =====
-document.addEventListener('click', (e) => {
-  const btn = e.target.closest('.js-yt');
-  if (!btn) return;
-  const id = btn.dataset.yt;
+// ===== YouTube: вставка iframe по клику (поддержка .video-wrap[data-yt] и .js-yt[data-yt]) =====
+const mountYouTubeIframe = (wrap) => {
+  const id = wrap.getAttribute('data-yt');
+  if (!id) return;
   const iframe = document.createElement('iframe');
   iframe.setAttribute('loading', 'lazy');
   iframe.setAttribute('allowfullscreen', '');
-  iframe.setAttribute('referrerpolicy', 'origin-when-cross-origin');
+  iframe.setAttribute('referrerpolicy', 'strict-origin-when-cross-origin');
   iframe.setAttribute(
     'allow',
     'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share'
@@ -121,9 +120,28 @@ document.addEventListener('click', (e) => {
   iframe.style.width = '100%';
   iframe.style.height = '100%';
   iframe.style.border = '0';
-  btn.replaceWith(Object.assign(document.createElement('div'), {
-    className: 'video-wrap', innerHTML: ''
-  }));
-  const wrap = document.querySelector('.video-wrap:last-of-type') || document.querySelector('.video-wrap');
-  wrap && wrap.appendChild(iframe);
+  // Очищаем превью и вставляем iframe прямо в текущий контейнер
+  wrap.innerHTML = '';
+  // Гарантируем, что контейнер имеет нужные стили (если это <a>, они уже есть в CSS)
+  wrap.classList.add('video-wrap');
+  wrap.style.position = 'relative';
+  wrap.style.aspectRatio = '16 / 9';
+  wrap.appendChild(iframe);
+};
+
+// Клик мышью
+document.addEventListener('click', (e) => {
+  const wrap = e.target.closest('.video-wrap[data-yt], .js-yt[data-yt]');
+  if (!wrap) return;
+  e.preventDefault();
+  mountYouTubeIframe(wrap);
+});
+
+// Доступность — запуск по Enter/Space
+document.addEventListener('keydown', (e) => {
+  if (e.key !== 'Enter' && e.key !== ' ') return;
+  const wrap = document.activeElement?.closest?.('.video-wrap[data-yt], .js-yt[data-yt]');
+  if (!wrap) return;
+  e.preventDefault();
+  mountYouTubeIframe(wrap);
 });
