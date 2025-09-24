@@ -19,7 +19,14 @@
   <!-- Хедер / навигация -->
   <header class="site-header">
     <div class="container">
-      <div class="logo"><a href="{{ url_for('index') }}">СК "Алтайские барсы"</a></div>
+      <div class="logo">
+  <a href="{{ url_for('index') }}" class="logo-link" aria-label='СК "Алтайские Барсы"'>
+    <img src="{{ url_for('static', filename='images/logo.png') }}"
+         alt='СК "Алтайские Барсы"' width="160" height="40"
+         decoding="async" fetchpriority="high">
+  </a>
+</div>
+
 
       <nav id="main-nav" class="main-nav" aria-label="Основная навигация">
         <ul>
