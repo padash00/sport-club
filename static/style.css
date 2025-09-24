@@ -186,9 +186,39 @@ a:hover{ color:var(--brand-2-dark); }
 .direction-card.gym .btn:hover,
 .gym-theme .btn:hover{ background:var(--accent-gym-dark); }
 
+/* ---- ДОБАВЛЕНО: перекрёстная подсветка самих кнопок ---- */
+.direction-card.ski .btn:hover,
+.direction-card.ski .btn:focus-visible{
+  background: var(--accent-gym);
+  border-color: var(--accent-gym);
+  color:#fff;
+  box-shadow: 0 0 0 6px rgba(212,160,23,.18);
+}
+.direction-card.gym .btn:hover,
+.direction-card.gym .btn:focus-visible{
+  background: var(--brand-2);
+  border-color: var(--brand-2);
+  color:#fff;
+  box-shadow: 0 0 0 6px rgba(0,90,156,.18);
+}
+
 /* Responsive cards */
 @media (max-width: 900px){
   .directions-wrapper{ grid-template-columns:1fr; }
+}
+
+/* ---- ДОБАВЛЕНО: подсветка СОСЕДНЕЙ карточки при наведении на кнопку ---- */
+.directions-wrapper:has(#ski-resort-section .btn:hover) #gym-section,
+.directions-wrapper:has(#ski-resort-section .btn:focus-visible) #gym-section{
+  box-shadow: var(--shadow-md);
+  border-color: var(--accent-gym);
+  transform: translateY(-4px);
+}
+.directions-wrapper:has(#gym-section .btn:hover) #ski-resort-section,
+.directions-wrapper:has(#gym-section .btn:focus-visible) #ski-resort-section{
+  box-shadow: var(--shadow-md);
+  border-color: var(--brand-2);
+  transform: translateY(-4px);
 }
 
 /* ===============================
@@ -525,6 +555,8 @@ a:hover{ color:var(--brand-2-dark); }
   }
   .wa-badge{ display:none; }
 }
+
+/* ЛОГОТИП */
 .logo { display:flex; align-items:center; }
 .logo-link { display:inline-flex; align-items:center; line-height:1; }
 .logo-link img { height:80px; width:auto; display:block; }
@@ -532,4 +564,3 @@ a:hover{ color:var(--brand-2-dark); }
 @media (max-width:520px){
   .logo-link img { height:32px; }
 }
-
