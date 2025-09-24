@@ -16,16 +16,14 @@
     <div class="container">
       <div class="logo">
   <a href="{{ url_for('index') }}" class="logo-link" aria-label='СК "Алтайские Барсы"'>
-    <picture>
-      <source srcset="{{ url_for('static', filename='images/logo.webp') }}" type="image/webp">
-      <img
-        src="{{ url_for('static', filename='images/logo.png') }}"
-        alt='СК "Алтайские Барсы"'
-        width="160" height="40"
-        decoding="async" fetchpriority="high">
-    </picture>
+    <img
+      src="{{ url_for('static', filename='images/logo.png') }}"
+      alt='СК "Алтайские Барсы"'
+      width="160" height="40"
+      decoding="async" fetchpriority="high">
   </a>
 </div>
+
 
 
 
@@ -143,6 +141,7 @@
 
 </body>
 </html>
+
 
 
 
