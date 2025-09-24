@@ -527,8 +527,9 @@ a:hover{ color:var(--brand-2-dark); }
 }
 .logo { display:flex; align-items:center; }
 .logo-link { display:inline-flex; align-items:center; line-height:1; }
-.logo-link img { height:40px; width:auto; display:block; }
+.logo-link img { height:80px; width:auto; display:block; }
 
 @media (max-width:520px){
   .logo-link img { height:32px; }
 }
+
