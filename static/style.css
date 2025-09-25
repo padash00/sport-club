@@ -564,3 +564,26 @@ a:hover{ color:var(--brand-2-dark); }
 @media (max-width:520px){
   .logo-link img { height:32px; }
 }
+/* Кнопка в карточке инструктора: базовый вид */
+.instructor-card .btn{
+  background: var(--brand-2);
+  border-color: var(--brand-2);
+  color:#fff;
+}
+
+/* Подсветка ЖЁЛТЫМ при hover/фокусе */
+.instructor-card .btn:hover,
+.instructor-card .btn:focus-visible{
+  background: var(--accent-gym);     /* жёлтый */
+  border-color: var(--accent-gym);
+  color:#fff;
+  transform: translateY(-2px);
+  box-shadow: 0 0 0 6px rgba(212,160,23,.18);
+}
+
+/* Необязательно: подсвечивать всю карточку, когда навели на кнопку */
+.instructor-card:has(.btn:hover),
+.instructor-card:has(.btn:focus-visible){
+  box-shadow: var(--shadow-md);
+}
+
